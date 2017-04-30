@@ -1,8 +1,8 @@
 # The Database Layout
 ## Tables
-* [Products](#Products)
-* [ProductTypes](#ProductTypes)
-* [Offers](#Offers)
+* [Products](#products)
+* [ProductTypes](#producttypes)
+* [Offers](#offers)
 
 ### Products
 * **ProductID**
