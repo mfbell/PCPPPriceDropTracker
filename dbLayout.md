@@ -4,17 +4,17 @@
 * [ProductTypes](#ProductTypes)
 * [Offers](#Offers)
 
-### Products [Table]
+### Products
 * **ProductID**
 * Name
 * *ProductTypeID*
 * PCPP_URL
 
-### ProductTypes [Table]
+### ProductTypes
 * **ProductTypeID**
 * Description
 
-### Offers [Table]
+### Offers
 * **OfferID**
 * Active
 * Displayed
