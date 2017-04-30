@@ -27,12 +27,12 @@ from tools import main
 def scrapper(country="uk"):
     """The data scrapper.
 
-    country - A country code supported by PPCP | string
+    country - A country code supported by PCPP | string
 
     """
     if country not in ["au", "be", "ca", "de", "es", "fr",
                        "in", "it", "nz", "uk", "us"]:
-        raise UnknownCountryError("PPCP does not support {0}. :\\".format(country))
+        raise UnknownCountryError("PCPP does not support {0}. :\\".format(country))
     dl_time = time()
     page = requests.get("https://{0}.pcpartpicker.com/products/pricedrop/".format(country))
     soup = BeautifulSoup(page.content, 'html.parser')
@@ -53,7 +53,7 @@ def scrapper(country="uk"):
                       "flames": len(data[1].find_all('img')),
                       "normal price": float(data[3].get_text()[1:]),
                       "offer price": float(data[5].get_text()[1:]),
-                      "ppcp url": "https://{0}.pcpartpicker.com".format(country) + data[1].find('a').get("href"),
+                      "pcpp url": "https://{0}.pcpartpicker.com".format(country) + data[1].find('a').get("href"),
                       "shop url": "https://{0}.pcpartpicker.com".format(country) + data[5].find('a').get("href"),
                       "shop name": data[7].get_text(),
                       "saving": float(data[9].get_text()[1:]),

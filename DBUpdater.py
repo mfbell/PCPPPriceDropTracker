@@ -34,7 +34,7 @@ class Handler(Tools):
         self.path = path
         if country not in ["au", "be", "ca", "de", "es", "fr",
                            "in", "it", "nz", "uk", "us"]:
-            raise UnknownCountryError("PPCP does not support {0}. :\\".format(country))
+            raise UnknownCountryError("PCPP does not support {0}. :\\".format(country))
         self.debug = debug
         self.country = country
         self.open()
@@ -54,8 +54,8 @@ class Handler(Tools):
             # Was it?
             if len(result) < 1:
                 # No? Adding it.
-                self.query("INSERT INTO Offers(ProductID, Active, Normal_Price, Offer_Price, \
-                            Shop_URL, Shop_Name, Updated, Flames) VALUES (?,1,?,?,?,?,?,?)",
+                self.query("INSERT INTO Offers(ProductID, Active, Displayed, Normal_Price, Offer_Price, \
+                            Shop_URL, Shop_Name, Updated, Flames) VALUES (?,1,0,?,?,?,?,?,?)",
                            (self.get_product_id(item), item["normal price"], item["offer price"],
                             item["shop url"], item["shop name"], item["time"], item["flames"]))
                 actives.append(self.c.lastrowid)
@@ -74,10 +74,17 @@ class Handler(Tools):
             if item[0] not in actives:
                 inactives.append((item[0],))
         self.c.executemany("UPDATE Offers SET Active=0 WHERE OfferID=?", inactives)
+        self.db.commit()
 
-    def clean_up(self):
-        """Remove all inactive offers"""
+    def clean_up(self, displayed=False):
+        """Remove all inactive (and displayed) offers
+
+        displayed - Removed displayed offers | boolean
+
+        """
         self.query("DELETE FROM Offers WHERE Active=0")
+        if displayed:
+            self.query("DELETE FROM Offers WHERE Displayed=1")
 
     def get_product_id(self, item):
         """Get a products id.
@@ -89,8 +96,8 @@ class Handler(Tools):
         self.debug_msg("FIND PROD ID: {0}".format(result))
         if len(result) < 1:
             self.debug_msg("Adding...")
-            self.query("INSERT INTO Products(Name, ProductTypeID, PPCP_URL) VALUES (?,?,?)",
-                       (item["name"], self.get_product_type_id(item["catagorty"]), item["ppcp url"]))
+            self.query("INSERT INTO Products(Name, ProductTypeID, PCPP_URL) VALUES (?,?,?)",
+                       (item["name"], self.get_product_type_id(item["catagorty"]), item["pcpp url"]))
             self.debug_msg("Added")
             return self.c.lastrowid
         return result[0][0]
@@ -118,7 +125,7 @@ class Handler(Tools):
                                        ProductID integer,
                                        Name text,
                                        ProductTypeID integer,
-                                       PPCP_URL text,
+                                       PCPP_URL text,
                                        Primary Key(ProductID),
                                        Foreign Key(ProductTypeID) references ProductTypes(ProductTypeID))""")
         result = self.query("select name from sqlite_master where name=?", ("ProductTypes",))
@@ -132,6 +139,7 @@ class Handler(Tools):
             self.query("""CREATE TABLE Offers(
                                        OfferID integer,
                                        Active integer,
+                                       Displayed integer,
                                        ProductID integer,
                                        Normal_Price real,
                                        Offer_Price real,
