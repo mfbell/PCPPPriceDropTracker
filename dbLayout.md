@@ -5,23 +5,23 @@
 * [Offers](#offers)
 
 ### Products
-* **ProductID**
-* Name
-* *ProductTypeID*
-* PCPP_URL
+* **ProductID** - Unique product ID [integer]
+* Name - Product name [text]
+* *ProductTypeID* - Product Type ID [integer] = ProductTypes(ProductTypeID)
+* PCPP_URL - PPCP URL [text]
 
 ### ProductTypes
-* **ProductTypeID**
-* Description
+* **ProductTypeID** - Unique product type ID [integer]
+* Description - Product type [text]
 
 ### Offers
-* **OfferID**
-* Active
-* Displayed
-* *ProductID*
-* Normal_Price
-* Offer_Price
-* Shop_URL
-* Shop_Name
-* Updated
-* Flames
+* **OfferID** - Unique offer ID [integer]
+* Active - Active offer [integer/boolean]
+* Displayed - Has been displayed to user [integer/boolean]
+* *ProductID* - Product ID [integer] = Products(ProductID)
+* Normal_Price - The 'Normal Price' for that offer [real]
+* Offer_Price - The offer price [real]
+* Shop_URL - URL of the shop/product [text]
+* Shop_Name - Shop name [text]
+* Updated - Last time the offer was seen [real]
+* Flames - Highest flame level seen [integer]
