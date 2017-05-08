@@ -25,7 +25,7 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 #        id_ = uuid4().hex
 #    return id_
 
-def main(doc=None, itu=None):
+def main(doc=None, itu=None, pause=True):
     """Module run as main function.
 
     doc - Either docstring or info to print | string
@@ -49,6 +49,9 @@ def main(doc=None, itu=None):
     if itu:
         print("Import to use.")
     print()
+    input("Press Enter to exit...")
+    print("Terminated")
+    exit(0)
 
 def debug_msg(debug, msg):
     """Debug message printer. if True.

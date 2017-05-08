@@ -30,4 +30,5 @@
 ### Filters
 * **FilterID** - Unique filter ID [integer]
 * Name - Filter name [text]
-* Filter - Filter phase (e.g. [WHERE] "X='a' and Y='b'") [text]
+* Filter - Filter phase (e.g. "[WHERE] X='a' and Y='b'") [text]
+* Date_Time - Date/Time filter was created [real]

@@ -18,14 +18,16 @@ URL = ""
 __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 import sqlite3
-from errors import UnknownCountryError
+from time import time
+import json
+from errors import UnknownCountryError, FilterBuildError
 from tools import main, Tools
 from dataScrapper import scrapper
 
 class Handler(Tools):
     """The database handler."""
 
-    def __init__(self, path="X:\coding\projects\pcppScraper\pcpp_offers.db", country="uk", debug=False):
+    def __init__(self, path=".\pcpp_offers.sqlite3", country="uk", debug=False):
         """Initialization.
 
         path - Database file path | string
@@ -76,6 +78,143 @@ class Handler(Tools):
         self.c.executemany("UPDATE Offers SET Active=0 WHERE OfferID=?", inactives)
         self.db.commit()
 
+    def add_filter(self, filters, name=None):
+        """Add a filter to the filter table.
+
+        filters - A list of filters, ['filter', 'oporand', value] and oporands | list
+                    / e.g [["OfferID", ">", 10], "AND", ["Normal_Price", "<", 100], "OR", ["Flames", "=", 3]]
+                    / See do_filter() for more info on filters.
+        name - Name of filter | string
+
+        """
+        self.query("INSERT INTO Filters(Name, Filter, Date_Time) VALUES (?,?,?)", (name, json.dumps(filters), time()))
+
+    def del_filter(self, ID):
+        """Delete a filter.
+
+        ID - Filter name or FilterID | int or string
+
+        """
+        if isinstance(ID, int):
+            self.query("DELETE FROM Filters WHERE FilterID=?", (ID,))
+        elif isinstance(ID, str):
+            self.query("DELETE FROM Filters WHERE Name=?", (ID,))
+
+    def do_filter(self, ID, filters=None):
+        """Get OfferIDs from a filter.
+
+        ID - FilterID or Name | int or str
+        filters - Use if giving custom filter to give it | str
+                    / Set ID = ":CUSTOM:" to run it.
+
+        Full filtering across tables happens with:
+        SELECT OfferID FROM Offers JOIN Products ON Offers.ProductID = Products.ProductID [WHERE args]
+        I think I have including all columns.
+        You only get back the Offers.OfferID for simplication at the moment.
+
+        Filters:
+            "OfferID" is Offers.OfferID
+            "Active" is Offers.Active
+            "Displayed" is Offers.Displayed
+            "ProductID" is Offers.ProductID/Products.ProductID
+            "Normal_Price" is Offers.Normal_Price
+            "Offer_Price" is Offers.Offer_Price
+            "Shop_URL" is Offers.Shop_URL
+            "Shop_Name" is Offers.Shop_Name
+            "Updated" is Offers.Updated
+            "Flames" is Offers.Flames
+            "Name" is Products.Name
+            "ProductTypeID" is Products.ProductTypeID(/ProductTypes.ProductTypeID)
+            "PCPP_URL" is Products.PCPP_URL
+            "ProductType" is Products.ProductTypeID(/ProductTypes.ProductTypeID) resolved from ProductTypes.Description
+        Comparison OPs:
+            "=", "!=", ">", "<", ">=", "<="
+            Note: Some filters auto do comparison, see code.
+        Value: Is the value you want to filter by.
+
+        """
+        if ID == ":CUSTOM:":
+            con = True
+        elif isinstance(ID, int):
+            filters = json.loads(self.query("SELECT Filter FROM Filters WHERE FilterID=?", (ID,))[0][0])
+        elif isinstance(ID, str):
+            filters = json.loads(self.query("SELECT Filter FROM Filters WHERE Name=?", (ID,))[0][0])
+        if not con:
+            return None
+        args = " WHERE"
+        # My sh!tty atempt to protect againest sql injection but probably failed but this does not really need it. :)
+        for part in filters:
+            args += " "
+            if isinstance(part, (tuple, list)):
+                col = part[0]
+                op = part[1]
+                value = part[2]
+                # Column
+                if col == "OfferID":
+                    args += "OfferID "
+                elif col == "Active":
+                    args += "Active"
+                elif col == "Displayed":
+                    args += "Displayed "
+                elif col == "ProductID":
+                    args += "ProductID "
+                elif col == "Normal_Price":
+                    args += "Normal_Price "
+                elif col == "Offer_Price":
+                    args += "Offer_Price "
+                elif col == "Shop_URL":
+                    args += "Shop_URL = " + str(value)
+                    continue
+                elif col == "Shop_Name":
+                    args += "Shop_Name = " + str(value)
+                    continue
+                elif col == "Updated":
+                    args += "Updated "
+                elif col == "Flames":
+                    args += "Flames "
+                elif col == "Name":
+                    args += "Name = " + str(value)
+                    continue
+                elif col == "ProductTypeID":
+                    args += "ProductTypeID "
+                elif col == "PCPP_URL":
+                    args += "PCPP_URL = " + str(value)
+                    continue
+                elif col == "ProductType":
+                    args += "ProductTypeID = " + str(self.query("SELECT ProductTypeID FROM ProductTypes WHERE Description = ?", (value,))[0][0])
+                    continue
+                else:
+                    raise FilterBuildError("Unknown filter: {0} in {1} in {2}".format(col, part, filters))
+                # Comparison Op
+                if op == "=":
+                    args += "= "
+                elif op == "!=":
+                    args += "!= "
+                elif op == "<":
+                    args += "< "
+                elif op == ">":
+                    args += "> "
+                elif op == "<=":
+                    args += "<= "
+                elif op == ">=":
+                    args += ">= "
+                else:
+                    raise FilterBuildError("Unknown comparision: {0} in {1} in {2}".format(op, part, filters))
+                # Value
+                args += str(value)
+            # Main clause ops
+            elif part.upper() == "AND":
+                args += "AND"
+            elif part.upper() == "OR":
+                args += "OR"
+            else:
+                raise FilterBuildError("Can not build filter from filter data: {0} in {1}".format(part, filters))
+        # Call
+        if args == " WHERE":
+            args = ""
+        sql = "SELECT OfferID FROM Offers JOIN Products ON Offers.ProductID = Products.ProductID" + args
+        return self.query(sql)
+
     def clean_up(self, displayed=False):
         """Remove all inactive (and displayed) offers
 
@@ -118,37 +257,48 @@ class Handler(Tools):
 
     def first_setup(self):
         """First time setup."""
-        self.query("PRAGMA foreign_keys = ON")
-        result = self.query("select name from sqlite_master where name=?", ("Products",))
+        self.query("PRAGMA foreign_keys = '1'")
+        self.if_not_table("Products", """CREATE TABLE Products(
+                                                      ProductID integer,
+                                                      Name text,
+                                                      ProductTypeID integer,
+                                                      PCPP_URL text,
+                                                      Primary Key(ProductID),
+                                                      Foreign Key(ProductTypeID) references ProductTypes(ProductTypeID))""")
+        self.if_not_table("ProductTypes", """CREATE TABLE ProductTypes(
+                                                          ProductTypeID integer,
+                                                          Description text,
+                                                          Primary Key(ProductTypeID))""")
+        self.if_not_table("Offers", """CREATE TABLE Offers(
+                                                    OfferID integer,
+                                                    Active integer,
+                                                    Displayed integer,
+                                                    ProductID integer,
+                                                    Normal_Price real,
+                                                    Offer_Price real,
+                                                    Shop_URL text,
+                                                    Shop_Name text,
+                                                    Updated real,
+                                                    Flames integer,
+                                                    Primary Key(OfferID),
+                                                    Foreign Key(ProductID) references Products(ProductID))""")
+        self.if_not_table("Filters", """CREATE TABLE Filters(
+                                                     FilterID integer,
+                                                     Name text,
+                                                     Filter text,
+                                                     Date_Time real,
+                                                     Primary Key(FilterID))""")
+
+    def if_not_table(self, name, sql):
+        """If table does not exist, execute sql.
+
+        name - Name of the table | string
+        sql - SQL command | string
+
+        """
+        result = self.query("select name from sqlite_master where name=?", (name,))
         if len(result) != 1:
-            self.query("""CREATE TABLE Products(
-                                       ProductID integer,
-                                       Name text,
-                                       ProductTypeID integer,
-                                       PCPP_URL text,
-                                       Primary Key(ProductID),
-                                       Foreign Key(ProductTypeID) references ProductTypes(ProductTypeID))""")
-        result = self.query("select name from sqlite_master where name=?", ("ProductTypes",))
-        if len(result) != 1:
-            self.query("""CREATE TABLE ProductTypes(
-                                       ProductTypeID integer,
-                                       Description text,
-                                       Primary Key(ProductTypeID))""")
-        result = self.query("select name from sqlite_master where name=?", ("Offers",))
-        if len(result) != 1:
-            self.query("""CREATE TABLE Offers(
-                                       OfferID integer,
-                                       Active integer,
-                                       Displayed integer,
-                                       ProductID integer,
-                                       Normal_Price real,
-                                       Offer_Price real,
-                                       Shop_URL text,
-                                       Shop_Name text,
-                                       Updated real,
-                                       Flames integer,
-                                       Primary Key(OfferID),
-                                       Foreign Key(ProductID) references Products(ProductID))""")
+            self.query(sql)
 
     def open(self):
         """Open a connection to a database."""
@@ -179,14 +329,14 @@ class Handler(Tools):
         return self.c.fetchall()
 
 
-def handler_handler(*args):
-    try:
-        a = Handler(*args)
-    except Exception as e:
-        a.db.rollback()
-        raise e
-    finally:
-        a.db.close()
+#def handler_handler(*args):
+#    try:
+#        a = Handler(*args)
+#    except Exception as e:
+#        a.db.rollback()
+#        raise e
+#    finally:
+#        a.db.close()
 
 
 if __name__ == '__main__':

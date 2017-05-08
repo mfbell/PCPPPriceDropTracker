@@ -34,5 +34,11 @@ class UnknownSiteError(Error):
 class UnknownCountryError(Error):
     """Unknown country."""
 
+class FilterError(Error):
+    """General filter error."""
+
+class FilterBuildError(FilterError):
+    """General filter build error."""
+
 if __name__ == '__main__':
     main(__doc__)
