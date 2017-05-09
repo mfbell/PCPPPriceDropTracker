@@ -26,23 +26,25 @@ class App(ttk.Frame):
 
     def __init__(self, root=tk.Tk(), db_handler=Handler()):
         self.root = root
-        self.db_handler = db_handler
         super().__init__(self.root, padding=(12, 6, 6, 6))
         self.pack()
+        self.db_handler = db_handler
 
         # Window setup
         self.root.title("PCPPScrapper GUI {0}".format(VERSION))
-        # Variables
         # Content
-        self.main = Title_Panel(self, padding=(0, 0, 3, 0))
-        self.left = Side_Options(self, padding=(3, 0, 0, 0))
-        self.search_box = Search_Box(self, padding=(0, 3, 0, 3))
+        self.main = Title_Panel(self)
+        self.sep = ttk.Separator(self, orient="vertical")
+        self.left = Side_Options(self)
+        self.search_box = Search_Box(self)
         self.results_panel = Results_Panel(self, borderwidth=2, relief="sunken")
         # Packing
         self.main.grid(column=0, row=0)
-        self.left.grid(column=1, row=2)
-        self.search_box.grid(column=0, row=1)
+        self.sep.grid(column=1, row=0, rowspan=3, sticky="ns", padx=(6), pady=(3))
+        self.left.grid(column=2, row=0, rowspan=3, sticky="n")
+        self.search_box.grid(column=0, row=1, pady=(9,3))
         self.results_panel.grid(column=0, row=2)
+
 
     def add_filter(self):
         print("add filter would go here.")
@@ -52,7 +54,7 @@ class App(ttk.Frame):
 
 
 class Title_Panel(ttk.Frame):
-    """Main panel."""
+    """Title panel."""
 
     def __init__(self, root, *args, **kwargs):
         self.root = root
@@ -81,7 +83,7 @@ class Results_Panel(ttk.Frame):
     def __init__(self, root, *args, **kwargs):
         self.root = root
         super().__init__(self.root, *args, **kwargs)
-        self.text = ttk.Label(self, text="Results will go here...", padding=(50,100,50,100))
+        self.text = ttk.Label(self, text="Results will go here...", padding=(100,200,100,200))
         # Packing
         self.text.pack()
 
@@ -102,12 +104,12 @@ class Side_Options(ttk.Frame):
         self.exit = ttk.Button(self, text="Exit", command=self.root.quit)
 
         # Packing
-        self.update.grid(row=0)
-        self.add_filter.grid(row=1)
-        self.clear_db.grid(row=2)
+        self.update.grid(row=0, pady=(3,0))
+        self.add_filter.grid(row=1, pady=(3,0))
+        self.clear_db.grid(row=2, pady=(3,0))
 
-        self.clear.grid(row=98)
-        self.exit.grid(row=99)
+        self.clear.grid(row=98, pady=(3,0))
+        self.exit.grid(row=99, pady=(3,0), sticky="s")
 
 
 def ubp():
