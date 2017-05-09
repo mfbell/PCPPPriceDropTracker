@@ -328,16 +328,5 @@ class Handler(Tools):
         self.db.commit()
         return self.c.fetchall()
 
-
-#def handler_handler(*args):
-#    try:
-#        a = Handler(*args)
-#    except Exception as e:
-#        a.db.rollback()
-#        raise e
-#    finally:
-#        a.db.close()
-
-
 if __name__ == '__main__':
     main(__doc__)

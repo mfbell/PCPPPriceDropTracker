@@ -19,34 +19,69 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 import tkinter as tk
 import tkinter.ttk as ttk
+from DBHandler import Handler
 
 class App(ttk.Frame):
     """The main window."""
 
-    def __init__(self, root=tk.Tk()):
+    def __init__(self, root=tk.Tk(), db_handler=Handler()):
         self.root = root
+        self.db_handler = db_handler
         super().__init__(self.root, padding=(12, 6, 6, 6))
         self.pack()
 
         # Window setup
         self.root.title("PCPPScrapper GUI {0}".format(VERSION))
+        # Variables
         # Content
-        self.main = Main_Panel(self, padding=(0, 0, 3, 0))
-        self.main.grid(column=0, row=1)
+        self.main = Title_Panel(self, padding=(0, 0, 3, 0))
         self.left = Side_Options(self, padding=(3, 0, 0, 0))
-        self.left.grid(column=1, row=1)
+        self.search_box = Search_Box(self, padding=(0, 3, 0, 3))
+        self.results_panel = Results_Panel(self, borderwidth=2, relief="sunken")
         # Packing
+        self.main.grid(column=0, row=0)
+        self.left.grid(column=1, row=2)
+        self.search_box.grid(column=0, row=1)
+        self.results_panel.grid(column=0, row=2)
+
+    def add_filter(self):
+        print("add filter would go here.")
+
+    def run_filters(self):
+        print("run filters would go here.")
 
 
-class Main_Panel(ttk.Frame):
+class Title_Panel(ttk.Frame):
     """Main panel."""
 
     def __init__(self, root, *args, **kwargs):
         self.root = root
         super().__init__(self.root, *args, **kwargs)
+        self.text = ttk.Label(self, text="PCPPScrapper\nWriten by mtech0")
+        # Packing
+        self.text.grid(row=0)
 
-        self.text = ttk.Label(self, text="This is the main bar.\nThere is some text.\nIt is me :)")
+class Search_Box(ttk.Frame):
+    """Search Box."""
 
+    def __init__(self, root, *args, **kwargs):
+        self.root = root
+        super().__init__(self.root, *args, **kwargs)
+        self.search_text = tk.StringVar()
+        self.search_box = ttk.Entry(self, textvariable=self.search_text)
+        self.search_button = ttk.Button(self, text="Search")
+
+        # Packing
+        self.search_box.grid(column=0, row=0)
+        self.search_button.grid(column=1, row=0)
+
+class Results_Panel(ttk.Frame):
+    """Results panel."""
+
+    def __init__(self, root, *args, **kwargs):
+        self.root = root
+        super().__init__(self.root, *args, **kwargs)
+        self.text = ttk.Label(self, text="Results will go here...", padding=(50,100,50,100))
         # Packing
         self.text.pack()
 
@@ -58,14 +93,21 @@ class Side_Options(ttk.Frame):
         self.root = root
         super().__init__(self.root, *args, **kwargs)
 
-        self.update = ttk.Button(self, text="Update", command=ubp)
+        self.update = ttk.Button(self, text="Update", command=self.root.db_handler.updater)
+        self.add_filter = ttk.Button(self, text="Add Filter", command=self.root.add_filter)
+        self.run_filter = ttk.Button(self, text="Run Filters", command=self.root.run_filters)
+        self.clear_db = ttk.Button(self, text="Clean DB", command=self.root.db_handler.clean_up())
+
         self.clear = ttk.Button(self, text="Clear", command=cbp)
         self.exit = ttk.Button(self, text="Exit", command=self.root.quit)
 
         # Packing
         self.update.grid(row=0)
-        self.clear.grid(row=1)
-        self.exit.grid(row=2)
+        self.add_filter.grid(row=1)
+        self.clear_db.grid(row=2)
+
+        self.clear.grid(row=98)
+        self.exit.grid(row=99)
 
 
 def ubp():
