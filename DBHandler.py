@@ -1,4 +1,4 @@
-"""Datebase handler for PCPPScrapper.
+"""Datebase handler for PCPPScraper.
 
 
 
@@ -22,7 +22,7 @@ from time import time
 import json
 from errors import UnknownCountryError, FilterBuildError
 from tools import main, Tools
-from dataScrapper import scrapper
+from dataScraper import Scraper
 
 class Handler(Tools):
     """The database handler."""
@@ -44,7 +44,7 @@ class Handler(Tools):
 
     def updater(self):
         """Update the db to the lastest PCPP data."""
-        data = scrapper(self.country)
+        data = Scraper(self.country)
         actives = []
         for item in data:
             # Check if offer already in offers table.

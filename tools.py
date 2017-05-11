@@ -1,4 +1,4 @@
-"""Tools for PPCPScrapper.
+"""Tools for PPCPScraper.
 
 
 

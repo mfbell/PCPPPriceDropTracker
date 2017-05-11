@@ -1,4 +1,4 @@
-"""GUI for PCPPScrapper.
+"""GUI for PCPPScraper.
 
 
 
@@ -31,19 +31,23 @@ class App(ttk.Frame):
         self.db_handler = db_handler
 
         # Window setup
-        self.root.title("PCPPScrapper GUI {0}".format(VERSION))
+        self.root.title("PCPPScraper GUI {0}".format(VERSION))
         # Content
-        self.main = Title_Panel(self)
-        self.sep = ttk.Separator(self, orient="vertical")
-        self.left = Side_Options(self)
+        self.title_zone = Title_Panel(self)
+        self.right_bar = ttk.Separator(self, orient="vertical")
+        self.side_options = Side_Options(self)
         self.search_box = Search_Box(self)
         self.results_panel = Results_Panel(self, borderwidth=2, relief="sunken")
+        self.search_filters = Search_Filter_Panel(self)
+        #self.left_bar = ttk.Separator(self, orient="vertical")
         # Packing
-        self.main.grid(column=0, row=0)
-        self.sep.grid(column=1, row=0, rowspan=3, sticky="ns", padx=(6), pady=(3))
-        self.left.grid(column=2, row=0, rowspan=3, sticky="n")
-        self.search_box.grid(column=0, row=1, pady=(9,3))
-        self.results_panel.grid(column=0, row=2)
+        self.title_zone.grid(column=8, row=0)
+        self.right_bar.grid(column=9, row=2, rowspan=3, sticky="ns", padx=(6), pady=(3))
+        self.side_options.grid(column=10, row=2, rowspan=3, sticky="n")
+        self.search_box.grid(column=8, row=1, pady=(9,3))
+        self.results_panel.grid(column=8, row=2)
+        self.search_filters.grid(column=6, row=2, sticky="n", padx=(0,6), pady=(3))
+        #self.left_bar.grid(column=7, row=2, sticky="ns", padx=(6), pady=(3))
 
 
     def add_filter(self):
@@ -52,6 +56,12 @@ class App(ttk.Frame):
     def run_filters(self):
         print("run filters would go here.")
 
+    def clear_results(self):
+        self.results_panel.clear()
+
+    def show_all(self):
+        self.results_panel.fill()
+
 
 class Title_Panel(ttk.Frame):
     """Title panel."""
@@ -59,7 +69,7 @@ class Title_Panel(ttk.Frame):
     def __init__(self, root, *args, **kwargs):
         self.root = root
         super().__init__(self.root, *args, **kwargs)
-        self.text = ttk.Label(self, text="PCPPScrapper\nWriten by mtech0")
+        self.text = ttk.Label(self, text="PCPPScraper\nWriten by mtech0")
         # Packing
         self.text.grid(row=0)
 
@@ -83,9 +93,22 @@ class Results_Panel(ttk.Frame):
     def __init__(self, root, *args, **kwargs):
         self.root = root
         super().__init__(self.root, *args, **kwargs)
-        self.text = ttk.Label(self, text="Results will go here...", padding=(100,200,100,200))
+
+        self.tree = ttk.Treeview(self, column=("OfferID"), height=20)
+        self.tree.heading("#0", text="Name")
+        self.tree.column('#0', width=500)
+        self.tree.heading("OfferID", text="Offer ID")
         # Packing
-        self.text.pack()
+        self.tree.pack()
+        self.fill()
+
+    def clear(self):
+        self.tree.delete(*self.tree.get_children())
+
+    def fill(self):
+        results = self.root.db_handler.query("SELECT Name, OfferID FROM Offers JOIN Products ON Offers.ProductID = Products.ProductID WHERE Active=1")
+        for item in results:
+            self.tree.insert('', 'end', text=item[0], values=(item[1]))
 
 
 class Side_Options(ttk.Frame):
@@ -99,17 +122,31 @@ class Side_Options(ttk.Frame):
         self.add_filter = ttk.Button(self, text="Add Filter", command=self.root.add_filter)
         self.run_filter = ttk.Button(self, text="Run Filters", command=self.root.run_filters)
         self.clear_db = ttk.Button(self, text="Clean DB", command=self.root.db_handler.clean_up())
+        self.show_all = ttk.Button(self, text="Show All", command=self.root.show_all)
 
-        self.clear = ttk.Button(self, text="Clear", command=cbp)
+        self.clear = ttk.Button(self, text="Clear", command=self.root.clear_results)
         self.exit = ttk.Button(self, text="Exit", command=self.root.quit)
 
         # Packing
         self.update.grid(row=0, pady=(3,0))
-        self.add_filter.grid(row=1, pady=(3,0))
-        self.clear_db.grid(row=2, pady=(3,0))
+        self.add_filter.grid(row=2, pady=(3,0))
+        self.clear_db.grid(row=3, pady=(3,0))
+        self.show_all.grid(row=1, pady=(3,0))
 
         self.clear.grid(row=98, pady=(3,0))
         self.exit.grid(row=99, pady=(3,0), sticky="s")
+
+class Search_Filter_Panel(ttk.Frame):
+    """Search Filter Panel and elements."""
+
+    def __init__(self, root, *args, **kwargs):
+        self.root = root
+        super().__init__(self.root, *args, **kwargs)
+
+        self.text = ttk.Label(self, text="Search Filters\nwill go here")
+
+        # Packing
+        self.text.grid(column=0, row=0)
 
 
 def ubp():

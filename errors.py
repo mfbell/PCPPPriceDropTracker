@@ -1,4 +1,4 @@
-"""Errors for PPCPScrapper.
+"""Errors for PPCPScraper.
 
 
 
