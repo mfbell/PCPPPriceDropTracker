@@ -142,8 +142,11 @@ class Results_Panel(Panel):
         self.tree.heading("#0", text="Name")
         self.tree.column('#0', width=500)
         self.tree.heading("OfferID", text="Offer ID")
+        self.ybar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        self.tree['yscrollcommand'] = self.ybar.set
         # Packing
-        self.tree.pack()
+        self.tree.grid(column=0, row=0)
+        self.ybar.grid(column=1, row=0, sticky="ns")
 
         if data:
             self.root.title("Search Results")
