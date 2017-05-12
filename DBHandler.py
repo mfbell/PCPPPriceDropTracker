@@ -27,7 +27,7 @@ from dataScraper import Scraper
 class Handler(Tools):
     """The database handler."""
 
-    def __init__(self, path=".\pcpp_offers.sqlite3", country="uk", debug=False):
+    def __init__(self, path=".\pcpp_offers.sqlite3", country="uk", *args, **kwargs):
         """Initialization.
 
         path - Database file path | string
@@ -37,14 +37,14 @@ class Handler(Tools):
         if country not in ["au", "be", "ca", "de", "es", "fr",
                            "in", "it", "nz", "uk", "us"]:
             raise UnknownCountryError("PCPP does not support {0}. :\\".format(country))
-        self.debug = debug
         self.country = country
+        super().__init__(*args, **kwargs)
         self.open()
         self.first_setup()
 
     def updater(self):
         """Update the db to the lastest PCPP data."""
-        data = Scraper(self.country)
+        data = Scraper(self.country, debug=self.debug)
         actives = []
         for item in data:
             # Check if offer already in offers table.

@@ -17,6 +17,7 @@ STATUS = "Development"
 URL = ""
 __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
+from time import time
 #from uuid import uuid4
 
 #def uuid(dict):
@@ -53,27 +54,6 @@ def main(doc=None, itu=None, pause=True):
     print("Terminated")
     exit(0)
 
-def debug_msg(debug, msg):
-    """Debug message printer. if True.
-
-    debug - Test | boolean or object to retrieve self.debug from
-    msg - Msg to print | string
-    """
-    if isinstance(debug, (bool, int)):
-        pass
-    else:
-        try:
-            debug = debug.debug
-        except NameError:
-            raise NameError("Could not find self.debug in {0}".format(debug))
-        except AttributeError:
-            raise TypeError("Invalid Argument Type for 'debug': {0} ({1})".format(debug, type(debug)))
-    if debug:
-        if "\n" in msg:
-            print("[DEBUGGING]:\n", msg, "\n[/-------]")
-        else:
-            print("[DEBUGGING]:", msg)
-
 def sys_args(*check):
     """System Arg Handler Function.
 
@@ -96,13 +76,61 @@ def sys_args(*check):
 
 class Tools():
     """General Tool class."""
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """Initialization."""
+        if "debug" in kwargs:
+            self.debug = kwargs["debug"]
+            del(kwargs["debug"])
+        else:
+            self.debug_ = False
+        if "log" in kwargs:
+            self.log_ = True
+            self.log_p = kwargs["log"]
+            del(kwargs["log"])
+        else:
+            self.log_ = False
+            self.log_p = False
+        self.args = args
+        self.kwargs = kwargs
         self.debug_msg(self.__doc__.splitlines()[0][:-1] + " initialized.")
 
     def debug_msg(self, msg):
-        """Class rapper for debug_msg."""
-        return debug_msg(self, msg)
+        """Debug message printer. if True.
+
+        Looks for the method self.debug to know if to print as it returns T/F
+        msg - Msg to print | string
+        """
+        if self.debug():
+            if "\n" in msg:
+                print("[DEBUGGING]:\n", msg, "\n[/-------]")
+            else:
+                print("[DEBUGGING]:", msg)
+            if self.debug(log="get"):
+                if isinstance(self.log_p, str):
+                    log_file = open(self.log_p, "a")
+                else:
+                    n_time = round(time())
+                    self.log_p = ".\logs\log-{0}.txt".format(n_time)
+                    log_file = open(self.log_p, "a")
+                    log_file.write("#====================\n#Log file started at {0}.\n#====================\n\n".format(n_time))
+                log_file.write(str(time()) + " --- " + msg + "\n")
+                log_file.close()
+
+    def debug(self, set_=None, log=None):
+        if log == True:
+            self.debug_ = True
+            self.log_ = True
+        elif log == False:
+            self.log_ = False
+        elif set_ == False:
+            self.debug_ = False
+            self.log_ = False
+        elif set_ == True:
+            self.debug_ = True
+        elif log == "get":
+            return self.log_
+        else:
+            return self.debug_
 
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@ from errors import UnknownCountryError
 from tools import main
 
 
-def Scraper(country="uk"):
+def Scraper(country="uk", *args, **kwargs):
     """The data Scraper.
 
     country - A country code supported by PCPP | string
