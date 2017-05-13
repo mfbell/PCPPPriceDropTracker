@@ -42,8 +42,6 @@ class App(Panel):
             self.db_handler = False
         if not "padding" in kwargs:
             kwargs["padding"] = (12, 6, 6, 6)
-        #kwargs["debug"] = True # Override
-        #kwargs["log"] = True # ^
         super().__init__(root, *args, **kwargs)
         self.pack()
         if not self.db_handler:
@@ -51,6 +49,7 @@ class App(Panel):
 
         # Window setup
         self.root.title("PCPPScraper GUI {0}".format(VERSION))
+        self.root.option_add('*tearOff', False)
         # Content
         self.title_zone = Title_Panel(self, debug=self.debug)
         self.right_bar = ttk.Separator(self, orient="vertical")
@@ -58,6 +57,8 @@ class App(Panel):
         self.search_box = Search_Box(self, debug=self.debug)
         self.results_panel = Results_Panel(self, borderwidth=2, relief="sunken", debug=self.debug)
         self.search_filters = Search_Filter_Panel(self, debug=self.debug)
+        self.foot_bar = Foot_Bar(self, debug=self.debug)
+        self.menu_bar = Menu_Bar(self)
         #self.left_bar = ttk.Separator(self, orient="vertical")
         # Packing
         self.title_zone.grid(column=8, row=0)
@@ -66,7 +67,9 @@ class App(Panel):
         self.search_box.grid(column=8, row=1, pady=(9,3))
         self.results_panel.grid(column=8, row=2)
         self.search_filters.grid(column=6, row=2, sticky="n", padx=(0,6), pady=(3))
+        self.foot_bar.grid(column=0, row=99, columnspan=32)
         #self.left_bar.grid(column=7, row=2, sticky="ns", padx=(6), pady=(3))
+
 
 
     def add_filter(self):
@@ -109,24 +112,28 @@ class Search_Box(Panel):
         self.root.results_panel.clear()
         words = [word.strip() for word in self.search_text.get().split()]
         if not words:
-            return self.root.show_all()
-        orders = list(permutations(words))
-        combinations = []
-        for order in orders:
-            combinations.append("%" + "%".join(order) + "%")
-        results = self.root.db_handler.query("""SELECT Name, OfferID FROM Offers
-                                                    JOIN Products ON Offers.ProductID = Products.ProductID
-                                                WHERE Active=1 AND
-                                                    (Name LIKE {0})""".format(" OR Name LIKE ".join("?" for _ in combinations)), combinations)
+            results = self.get_all()
+        else:
+            orders = list(permutations(words))
+            combinations = []
+            for order in orders:
+                combinations.append("%" + "%".join(order) + "%")
+                results = self.root.db_handler.query("""SELECT Name, OfferID FROM Offers
+                                                            JOIN Products ON Offers.ProductID = Products.ProductID
+                                                        WHERE Active=1 AND
+                                                            (Name LIKE {0})""".format(" OR Name LIKE ".join("?" for _ in combinations)), combinations)
         if not results:
             return
-        if "return_" in kwargs and kwargs["return_"] == True:
-            return results
+        elif "external" in kwargs and kwargs["external"] == True:
+            Results_Panel(tk.Tk(), debug=self.debug, open_search_data=results)
+            return self.search()
         self.root.results_panel.add(results)
 
     def external_open(self):
-        Results_Panel(tk.Tk(), debug=self.debug, open_search_data=self.search(return_=True))
-        self.search()
+        self.search(external=True)
+
+    def get_all(self):
+        return self.root.db_handler.query("SELECT Name, OfferID FROM Offers JOIN Products ON Offers.ProductID = Products.ProductID WHERE Active=1")
 
 class Results_Panel(Panel):
     """Results panel."""
@@ -248,10 +255,71 @@ class Search_Filter_Panel(Panel):
         self.text.grid(column=0, row=0)
 
 
-def ubp():
-    print("Update button pressed")
-def cbp():
-    print("Clear button pressed")
+class Foot_Bar(Panel):
+    """Bottom info bar."""
+
+    def __init__(self, root, *args, **kwargs):
+        super().__init__(root, *args, **kwargs)
+
+        self.top_line = ttk.Separator(self.root, orient="horizontal")
+        self.name = ttk.Label(self.root, text="PCPPScraper")
+        self.bar0 = ttk.Separator(self.root, orient="vertical")
+        self.results_length = ttk.Label(self.root, text="ALL")
+        self.bar1 = ttk.Separator(self.root, orient="vertical")
+        self.country = ttk.Label(self.root, text="UK")
+
+        # Packing
+        self.top_line.grid(column=0, row=95, columnspan=100, sticky="ew", pady=(6,2))
+        self.name.grid(column=6, row=96, sticky="w")
+        self.bar0.grid(column=7, row=96, sticky="ns")
+        self.results_length.grid(column=8, row=96, sticky="w")
+        self.bar1.grid(column=9, row=96, sticky="ns")
+        self.country.grid(column=10, row=96, sticky="e")
+
+
+class Menu_Bar_(tk.Menu, Tools):
+    """Menu bar class."""
+
+    def __init__(self, root, *args, **kwargs):
+        self.root = root
+        self.win = tk.Toplevel(self.root)
+        Tools.__init__(self, *args, **kwargs)
+        tk.Menu.__init__(self.win, *args, **kwargs)
+        self.win["menu"] = self
+
+        # Content
+        self.file_menu = tk.Menu(self)
+        self.edit_menu = tk.Menu(self)
+
+        # Packing
+        self.add_cascade(menu=menu_file, label='File')
+        self.add_cascade(menu=menu_edit, label='Edit')
+
+class Menu_Bar(Tools):
+    """Menu bar class."""
+    def __init__(self, root, *args, **kwargs):
+        self.root = root
+        Tools.__init__(self, *args, **kwargs)
+        self.menu = tk.Menu(self.root.root, *args, **kwargs)
+        # Could not get making this class a menu object working.
+        self.root.root["menu"] = self.menu
+
+        # Content
+        self.file_menu = tk.Menu(self.menu)
+        self.file_menu.add_command(label="Open...", command=mp)
+        self.file_menu.add_command(label="Close.", command=mp)
+        self.edit_menu = tk.Menu(self.menu)
+        self.edit_menu.add_command(label="Change country", command=mp)
+        self.edit_menu.add_command(label="Another", command=mp)
+
+        # Packing
+        self.menu.add_cascade(menu=self.file_menu, label='File')
+        self.menu.add_cascade(menu=self.edit_menu, label='Edit')
+        self.menu.add_command(label="Update", command=mp)
+
+
+def mp():
+    print("A menu button was pressed")
 
 def main():
     app = App()
