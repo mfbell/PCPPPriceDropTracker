@@ -18,6 +18,7 @@ URL = ""
 __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 from time import time
+import os
 #from uuid import uuid4
 
 #def uuid(dict):
@@ -109,10 +110,13 @@ class Tools():
                 if isinstance(self.log_p, str):
                     log_file = open(self.log_p, "a")
                 else:
+                    path = ".\logs"
+                    if not os.path.exists(path):
+                        os.makedirs(path)
                     n_time = round(time())
-                    self.log_p = ".\logs\log-{0}.txt".format(n_time)
+                    self.log_p = path + "\log-{0}.txt".format(n_time)
                     log_file = open(self.log_p, "a")
-                    log_file.write("#====================\n#Log file started at {0}.\n#====================\n\n".format(n_time))
+                    log_file.write("#====================\n# Log file started at {0}.\n#====================\n\n".format(n_time))
                 log_file.write(str(time()) + " --- " + msg + "\n")
                 log_file.close()
 
