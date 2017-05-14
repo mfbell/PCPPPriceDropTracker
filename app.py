@@ -23,6 +23,7 @@ from itertools import permutations
 from DBHandler import Handler
 from tools import Tools
 
+
 class Panel(ttk.Frame, Tools):
     """Inherited class."""
 
@@ -30,6 +31,7 @@ class Panel(ttk.Frame, Tools):
         self.root = root
         Tools.__init__(self, *args, **kwargs)
         ttk.Frame.__init__(self, self.root, *self.args, **self.kwargs)
+
 
 class App(Panel):
     """The main window."""
@@ -50,15 +52,17 @@ class App(Panel):
         # Window setup
         self.root.title("PCPPScraper GUI {0}".format(VERSION))
         self.root.option_add('*tearOff', False)
+            # ColName:[DisplayName, width (-1=Default)]
+        self.show_columns = {"Name":["Name", 500], "OfferID":["OfferID", -1]}
         # Content
         self.title_zone = Title_Panel(self, debug=self.debug)
         self.right_bar = ttk.Separator(self, orient="vertical")
-        self.side_options = Side_Options(self, debug=self.debug)
         self.search_box = Search_Box(self, debug=self.debug)
         self.results_panel = Results_Panel(self, borderwidth=2, relief="sunken", debug=self.debug)
         self.search_filters = Search_Filter_Panel(self, debug=self.debug)
-        self.foot_bar = Foot_Bar(self, debug=self.debug)
+        self.status_bar = Status_Bar(self, debug=self.debug)
         self.menu_bar = Menu_Bar(self)
+        self.side_options = Side_Options(self, debug=self.debug)
         #self.left_bar = ttk.Separator(self, orient="vertical")
         # Packing
         self.title_zone.grid(column=8, row=0)
@@ -67,22 +71,14 @@ class App(Panel):
         self.search_box.grid(column=8, row=1, pady=(9,3))
         self.results_panel.grid(column=8, row=2)
         self.search_filters.grid(column=6, row=2, sticky="n", padx=(0,6), pady=(3))
-        self.foot_bar.grid(column=0, row=99, columnspan=32)
+        self.status_bar.grid(column=0, row=99, columnspan=32)
         #self.left_bar.grid(column=7, row=2, sticky="ns", padx=(6), pady=(3))
-
-
 
     def add_filter(self):
         print("add filter would go here.")
 
     def run_filters(self):
         print("run filters would go here.")
-
-    def clear_results(self):
-        self.results_panel.clear()
-
-    def show_all(self):
-        self.results_panel.show_all()
 
 
 class Title_Panel(Panel):
@@ -111,21 +107,26 @@ class Search_Box(Panel):
     def search(self, *args, **kwargs):
         self.root.results_panel.clear()
         words = [word.strip() for word in self.search_text.get().split()]
+        results = []
+        if len(words) > 6:
+            results.append(("Possible search combinations exceeds SQLite expression limit. Using linear search.", "ErrorMessage"))
+            words = ["%".join(word for word in words)]
+        self.debug_msg("Words: {0}".format(words))
         if not words:
             results = self.get_all()
         else:
-            orders = list(permutations(words))
-            combinations = []
-            for order in orders:
-                combinations.append("%" + "%".join(order) + "%")
-                results = self.root.db_handler.query("""SELECT Name, OfferID FROM Offers
-                                                            JOIN Products ON Offers.ProductID = Products.ProductID
-                                                        WHERE Active=1 AND
-                                                            (Name LIKE {0})""".format(" OR Name LIKE ".join("?" for _ in combinations)), combinations)
+            combinations = ["%" + "%".join(order) + "%" for order in list(permutations(words))]
+            db_results = self.root.db_handler.query("""SELECT {0} FROM Offers
+                                                           JOIN Products ON Offers.ProductID = Products.ProductID
+                                                       WHERE Active=1 AND
+                                                           (Name LIKE {1})""".format(", ".join(self.root.show_columns),
+                                                                                     " OR Name LIKE ".join("?" for _ in combinations)),
+                                                    combinations)
+            results += db_results
         if not results:
             return
         elif "external" in kwargs and kwargs["external"] == True:
-            Results_Panel(tk.Tk(), debug=self.debug, open_search_data=results)
+            Results_Panel(tk.Tk(), debug=self.debug, open_search_data=[self.root.show_columns, self.search_text.get(), results])
             return self.search()
         self.root.results_panel.add(results)
 
@@ -139,16 +140,24 @@ class Results_Panel(Panel):
     """Results panel."""
 
     def __init__(self, root, *args, **kwargs):
-        data = None
+        data= None
         if "open_search_data" in kwargs:
-            data = kwargs["open_search_data"]
+            self.columns, self.search_text, data = kwargs["open_search_data"]
             del(kwargs["open_search_data"])
         super().__init__(root, *args, **kwargs)
-
-        self.tree = ttk.Treeview(self, column=("OfferID"), height=20)
-        self.tree.heading("#0", text="Name")
-        self.tree.column('#0', width=500)
-        self.tree.heading("OfferID", text="Offer ID")
+        if not data:
+            self.columns = self.root.show_columns
+        self.tree = ttk.Treeview(self, column=([col for col in self.columns][1:]), height=20)
+        first = True
+        for col in self.columns:
+            if first:
+                col_ = '#0'
+                first = False
+            else:
+                col_ = col
+            self.tree.heading(col_, text=self.columns[col][0])
+            if not self.columns[col][1] == -1:
+                self.tree.column(col_, width=self.columns[col][1])
         self.ybar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
         self.tree['yscrollcommand'] = self.ybar.set
         # Packing
@@ -156,7 +165,7 @@ class Results_Panel(Panel):
         self.ybar.grid(column=1, row=0, sticky="ns")
 
         if data:
-            self.root.title("Search Results")
+            self.root.title("Search Results: '{0}'".format(self.search_text))
             self.pack()
             self.add(data)
         else:
@@ -196,13 +205,13 @@ class Side_Options(Panel):
         self.add_filter = ttk.Button(self, text="Add Filter", command=self.root.add_filter)
         self.run_filter = ttk.Button(self, text="Run Filters", command=self.root.run_filters)
         self.clear_db = ttk.Button(self, text="Clean DB", command=self.root.db_handler.clean_up)
-        self.show_all = ttk.Button(self, text="Show All", command=self.root.show_all)
+        self.show_all = ttk.Button(self, text="Show All", command=self.root.results_panel.show_all())
         self.debug_status = tk.StringVar()
         self.debug_button = ttk.Button(self, textvariable=self.debug_status, command=self.debug_change)
         self.log_status = tk.StringVar()
         self.log_button = ttk.Button(self, textvariable=self.log_status, command=self.log_change)
 
-        self.clear = ttk.Button(self, text="Clear", command=self.root.clear_results)
+        self.clear = ttk.Button(self, text="Clear", command=self.root.results_panel.clear)
         self.exit = ttk.Button(self, text="Exit", command=self.root.quit)
 
         self.set_textvars()
@@ -255,7 +264,7 @@ class Search_Filter_Panel(Panel):
         self.text.grid(column=0, row=0)
 
 
-class Foot_Bar(Panel):
+class Status_Bar(Panel):
     """Bottom info bar."""
 
     def __init__(self, root, *args, **kwargs):

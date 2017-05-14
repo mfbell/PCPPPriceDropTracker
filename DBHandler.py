@@ -78,7 +78,7 @@ class Handler(Tools):
         self.c.executemany("UPDATE Offers SET Active=0 WHERE OfferID=?", inactives)
         self.db.commit()
 
-    def add_filter(self, filters, name=None):
+    def filter_add(self, filters, name=None):
         """Add a filter to the filter table.
 
         filters - A list of filters, ['filter', 'oporand', value] and oporands | list
@@ -89,7 +89,7 @@ class Handler(Tools):
         """
         self.query("INSERT INTO Filters(Name, Filter, Date_Time) VALUES (?,?,?)", (name, json.dumps(filters), time()))
 
-    def del_filter(self, ID):
+    def filter_delete(self, ID):
         """Delete a filter.
 
         ID - Filter name or FilterID | int or string
@@ -100,7 +100,7 @@ class Handler(Tools):
         elif isinstance(ID, str):
             self.query("DELETE FROM Filters WHERE Name=?", (ID,))
 
-    def do_filter(self, ID, filters=None):
+    def filter_do(self, ID, filters=None):
         """Get OfferIDs from a filter.
 
         ID - FilterID or Name | int or str
@@ -257,48 +257,41 @@ class Handler(Tools):
 
     def first_setup(self):
         """First time setup."""
-        self.query("PRAGMA foreign_keys = '1'")
-        self.if_not_table("Products", """CREATE TABLE Products(
-                                                      ProductID integer,
-                                                      Name text,
-                                                      ProductTypeID integer,
-                                                      PCPP_URL text,
-                                                      Primary Key(ProductID),
-                                                      Foreign Key(ProductTypeID) references ProductTypes(ProductTypeID))""")
-        self.if_not_table("ProductTypes", """CREATE TABLE ProductTypes(
-                                                          ProductTypeID integer,
-                                                          Description text,
-                                                          Primary Key(ProductTypeID))""")
-        self.if_not_table("Offers", """CREATE TABLE Offers(
-                                                    OfferID integer,
-                                                    Active integer,
-                                                    Displayed integer,
-                                                    ProductID integer,
-                                                    Normal_Price real,
-                                                    Offer_Price real,
-                                                    Shop_URL text,
-                                                    Shop_Name text,
-                                                    Updated real,
-                                                    Flames integer,
-                                                    Primary Key(OfferID),
-                                                    Foreign Key(ProductID) references Products(ProductID))""")
-        self.if_not_table("Filters", """CREATE TABLE Filters(
+        self.query("PRAGMA foreign_keys = ON")
+        self.query("""CREATE TABLE IF NOT EXISTS Products(
+                                                     ProductID integer,
+                                                     Name text,
+                                                     ProductTypeID integer,
+                                                     PCPP_URL text,
+                                                     Primary Key(ProductID),
+                                                     Foreign Key(ProductTypeID) references ProductTypes(ProductTypeID));""")
+        self.query("""CREATE TABLE IF NOT EXISTS ProductTypes(
+                                                     ProductTypeID integer,
+                                                     Description text,
+                                                     Primary Key(ProductTypeID));""")
+        self.query("""CREATE TABLE IF NOT EXISTS Offers(
+                                                     OfferID integer,
+                                                     Active integer,
+                                                     Displayed integer,
+                                                     ProductID integer,
+                                                     Normal_Price real,
+                                                     Offer_Price real,
+                                                     Shop_URL text,
+                                                     Shop_Name text,
+                                                     Updated real,
+                                                     Flames integer,
+                                                     Primary Key(OfferID),
+                                                     Foreign Key(ProductID) references Products(ProductID));""")
+        self.query("""CREATE TABLE IF NOT EXISTS Filters(
                                                      FilterID integer,
                                                      Name text,
                                                      Filter text,
                                                      Date_Time real,
-                                                     Primary Key(FilterID))""")
-
-    def if_not_table(self, name, sql):
-        """If table does not exist, execute sql.
-
-        name - Name of the table | string
-        sql - SQL command | string
-
-        """
-        result = self.query("select name from sqlite_master where name=?", (name,))
-        if len(result) != 1:
-            self.query(sql)
+                                                     Primary Key(FilterID));""")
+        self.query("""CREATE TABLE IF NOT EXISTS Properties(
+                                                     ID integer,
+                                                     Primary Key(ID))""")
+        self.query("""INSERT OR IGNORE INTO Properties(ID) VALUES(1)""")
 
     def open(self):
         """Open a connection to a database."""
@@ -323,10 +316,27 @@ class Handler(Tools):
                 / Not required.
 
         """
+        if not sql.endswith(";"):
+            sql += ";"
         self.debug_msg("SELF.QUERY sql:\n{0}\nwith data: {1}".format(sql, data))
         self.c.execute(sql, data)
         self.db.commit()
         return self.c.fetchall()
+
+    def property_get(self, key):
+        return self.query("SELECT ? FROM Properties WHERE ID=1", (key,))[0][0]
+
+    def property_add(self, key, value=None, constraint="BLOB"):
+        # Does not really need sqli protection as it is app only facing and I can't get ? to work here.
+        self.query("ALTER TABLE Properties ADD COLUMN {0} {1}".format(key, constraint))
+        if value:
+            self.property_set(key, value)
+
+    def property_set(self, key, value):
+        columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
+        if key in columns: # A bit of sqli protection as I could not get ? to work.
+            self.query("UPDATE Properties SET {0} = ? WHERE ID=1".format(key), (value,))
+
 
 if __name__ == '__main__':
     main(__doc__)
