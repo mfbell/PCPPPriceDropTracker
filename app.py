@@ -1,6 +1,6 @@
-"""GUI for PCPPScraper.
+"""Interface and control for PCPPPriceDropTracker.
 
-
+Including the GUI, GUI Tools and other stuff.
 
 Written by {0}
 Version {1}
@@ -12,7 +12,7 @@ URL: {4}
 
 AUTHOR = "mtech0 | https://github.com/mtech0"
 LICENSE = "GNU-GPLv3 | https://www.gnu.org/licenses/gpl.txt"
-VERSION = "0.0.0"
+VERSION = "0.6.0"
 STATUS = "Development"
 URL = ""
 __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
