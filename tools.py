@@ -141,6 +141,7 @@ class Thread_tools(Tools):
     """A set of thread class tools."""
     def __init__(self, *args, **kwargs):
         """Initialization."""
+        Thread.__init__(self)
         Tools.__init__(self, *args, **kwargs)
         self.autorun()
 
