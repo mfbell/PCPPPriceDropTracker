@@ -1,4 +1,4 @@
-"""DataScraper for PCPPScraper.
+"""DataScraper for PCPPPriceDropTracker.
 
 Collects price drop data from PCPP.
 
@@ -12,7 +12,7 @@ URL: {4}
 
 AUTHOR = "mtech0 | https://github.com/mtech0"
 LICENSE = "GNU-GPLv3 | https://www.gnu.org/licenses/gpl.txt"
-VERSION = "0.0.0"
+VERSION = "0.9.1"
 STATUS = "Development"
 URL = ""
 __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
@@ -25,7 +25,7 @@ from tools import main
 
 
 def Scraper(country="uk", *args, **kwargs):
-    """The data Scraper.
+    """The data scraper and parser.
 
     country - A country code supported by PCPP | string
 
@@ -39,7 +39,7 @@ def Scraper(country="uk", *args, **kwargs):
     items = []
     secton_header = soup.find("tr")
     try:
-        catagorties = soup.find(class_="left-column").find("ul").get_text().strip().split() # Needs fixing.
+        catagorties = soup.find(class_="left-column").find("ul").get_text().strip().split("\n")
     except AttributeError:
         return None
     catagorty = -1
