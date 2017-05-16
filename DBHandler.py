@@ -20,7 +20,6 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 import sqlite3
 from time import time
 import json
-from threading import Thread
 from errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
 from tools import main, Tools, Thread_tools
 from dataScraper import Scraper
@@ -359,7 +358,7 @@ class Handler(Tools):
         return self.query(sql, values)
 
 
-class Updater(Thread_tools, Handler, Thread):
+class Updater(Thread_tools, Handler):
     """Database background updater."""
 
     def __init__(self, path=".\pcpp_offers.sqlite3", country="uk", *args, **kwargs):

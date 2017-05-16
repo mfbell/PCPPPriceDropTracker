@@ -19,6 +19,7 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 from time import time
 import os
+from threading import Thread
 #from uuid import uuid4
 
 #def uuid(dict):
@@ -137,7 +138,7 @@ class Tools():
             return self.debug_
 
 
-class Thread_tools(Tools):
+class Thread_tools(Tools, Thread):
     """A set of thread class tools."""
     def __init__(self, *args, **kwargs):
         """Initialization."""
