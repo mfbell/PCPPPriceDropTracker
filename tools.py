@@ -137,5 +137,17 @@ class Tools():
             return self.debug_
 
 
+class Thread_tools(Tools):
+    """A set of thread class tools."""
+    def __init__(self, *args, **kwargs):
+        """Initialization."""
+        Tools.__init__(self, *args, **kwargs)
+        self.autorun()
+
+    def autorun(self):
+        """Autorun thread if kwargs["run"] is True."""
+        if self.kwargs["run"]:
+            self.start()
+
 if __name__ == '__main__':
     main(__doc__)
