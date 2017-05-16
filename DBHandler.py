@@ -370,13 +370,13 @@ class Updater(Thread_tools, Handler):
                     run - autorun? | boolean
 
         """
-        Thread_tools.__init__(self, *args, **kwargs)
         # Could use Handler.__init__ but need custom really...
         self.path = path
         countries = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us"]
         if country not in countries:
             raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)))
         self.country = country
+        Thread_tools.__init__(self, *args, **kwargs)
 
     def run(self):
         """Update the database to the lastest PCPP data."""
