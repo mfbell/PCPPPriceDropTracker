@@ -1,4 +1,4 @@
-"""Datebase handler for PCPPScraper.
+"""Datebase handler for PCPPPriceDropTracker.
 
 
 
@@ -12,7 +12,7 @@ URL: {4}
 
 AUTHOR = "mtech0 | https://github.com/mtech0"
 LICENSE = "GNU-GPLv3 | https://www.gnu.org/licenses/gpl.txt"
-VERSION = "0.0.0"
+VERSION = "0.8.1"
 STATUS = "Development"
 URL = ""
 __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
@@ -20,8 +20,9 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 import sqlite3
 from time import time
 import json
+from threading import Thread
 from errors import UnknownCountryError, FilterBuildError
-from tools import main, Tools
+from tools import main, Tools, Thread_tools
 from dataScraper import Scraper
 
 class Handler(Tools):
@@ -31,53 +32,150 @@ class Handler(Tools):
         """Initialization.
 
         path - Database file path | string
+        country - PCPP country code | string
+
+        **kwargs - debug = debug object
 
         """
         self.path = path
-        if country not in ["au", "be", "ca", "de", "es", "fr",
-                           "in", "it", "nz", "uk", "us"]:
-            raise UnknownCountryError("PCPP does not support {0}. :\\".format(country))
+        countries = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us"]
+        if country not in countries:
+            raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)))
         self.country = country
         super().__init__(*args, **kwargs)
         self.open()
         self.first_setup()
 
+    # DB Tools or Handling Tools
     def updater(self):
-        """Update the db to the lastest PCPP data."""
-        data = Scraper(self.country, debug=self.debug)
-        actives = []
-        for item in data:
-            # Check if offer already in offers table.
-            result = self.query("SELECT OfferID FROM Offers WHERE ProductID=? AND Active=1 \
-                                 AND Normal_Price=? AND Offer_Price=? AND \
-                                 Shop_Name=? AND Shop_URL=?",
-                                (self.get_product_id(item), item["normal price"],
-                                 item["offer price"], item["shop name"], item["shop url"]))
-            # Was it?
-            if len(result) < 1:
-                # No? Adding it.
-                self.query("INSERT INTO Offers(ProductID, Active, Displayed, Normal_Price, Offer_Price, \
-                            Shop_URL, Shop_Name, Updated, Flames) VALUES (?,1,0,?,?,?,?,?,?)",
-                           (self.get_product_id(item), item["normal price"], item["offer price"],
-                            item["shop url"], item["shop name"], item["time"], item["flames"]))
-                actives.append(self.c.lastrowid)
-                continue
-            # Was, updating to lastest time and highest flames.
-            result = result[0][0]
-            flames = self.query("SELECT Flames FROM Offers WHERE OfferID=?", (result,))[0][0]
-            if item["flames"] > flames:
-                flames = item["flames"]
-            self.query("UPDATE Offers SET Updated=?, Flames=? WHERE OfferID=?", (item["time"], flames, result))
-            actives.append(result)
-        # Setup Offers not in lasest scrap to Inactive.
-        results = self.query("SELECT OfferID FROM Offers WHERE Active=1")
-        inactives = []
-        for item in results:
-            if item[0] not in actives:
-                inactives.append((item[0],))
-        self.c.executemany("UPDATE Offers SET Active=0 WHERE OfferID=?", inactives)
-        self.db.commit()
+        updater = Updater(country=self.country, path=self.path, debug=self.debug, run=False)
+        updater.start()
 
+    def first_setup(self):
+        """First time setup."""
+        self.query("PRAGMA foreign_keys = ON")
+        self.query("""CREATE TABLE IF NOT EXISTS Products(
+                                                     ProductID integer,
+                                                     Name text,
+                                                     ProductTypeID integer,
+                                                     PCPP_URL text,
+                                                     Primary Key(ProductID),
+                                                     Foreign Key(ProductTypeID) references ProductTypes(ProductTypeID));""")
+        self.query("""CREATE TABLE IF NOT EXISTS ProductTypes(
+                                                     ProductTypeID integer,
+                                                     Description text,
+                                                     Primary Key(ProductTypeID));""")
+        self.query("""CREATE TABLE IF NOT EXISTS Offers(
+                                                     OfferID integer,
+                                                     Active integer,
+                                                     Displayed integer,
+                                                     ProductID integer,
+                                                     Normal_Price real,
+                                                     Offer_Price real,
+                                                     Shop_URL text,
+                                                     Shop_Name text,
+                                                     Updated real,
+                                                     Flames integer,
+                                                     Primary Key(OfferID),
+                                                     Foreign Key(ProductID) references Products(ProductID));""")
+        self.query("""CREATE TABLE IF NOT EXISTS Filters(
+                                                     FilterID integer,
+                                                     Name text,
+                                                     Filter text,
+                                                     Date_Time real,
+                                                     Primary Key(FilterID));""")
+        self.query("""CREATE TABLE IF NOT EXISTS Properties(
+                                                     ID integer,
+                                                     Primary Key(ID))""")
+        self.query("""INSERT OR IGNORE INTO Properties(ID) VALUES(1)""")
+        return None
+
+    def clean_up(self, displayed=False):
+        """Remove all inactive (and displayed) offers
+
+        displayed - Removed displayed offers | boolean
+
+        """
+        self.query("DELETE FROM Offers WHERE Active=0")
+        if displayed:
+            self.query("DELETE FROM Offers WHERE Displayed=1")
+
+    def get_product_id(self, item):
+        """Get a products id.
+
+        item - all item data | dict
+
+        """
+        result = self.query("SELECT ProductID FROM Products WHERE Name=?", (item["name"],))
+        self.debug_msg("FIND PROD ID: {0}".format(result))
+        if len(result) < 1:
+            self.debug_msg("Adding...")
+            self.query("INSERT INTO Products(Name, ProductTypeID, PCPP_URL) VALUES (?,?,?)",
+                       (item["name"], self.get_product_type_id(item["catagorty"]), item["pcpp url"]))
+            self.debug_msg("Added")
+            return self.c.lastrowid
+        return result[0][0]
+
+    def get_product_type_id(self, cat):
+        """Get a product catagorty id.
+
+        cat - the catagorty | sting
+
+        """
+        self.debug_msg("GET PROD TYPE ID: {0}".format(cat))
+        result = self.query("SELECT ProductTypeID FROM ProductTypes WHERE Description=?", (cat,))
+        self.debug_msg("RESULTS: {0}".format(result))
+        if len(result) < 1:
+            self.query("INSERT INTO ProductTypes(Description) VALUES (?)", (cat,))
+            return self.c.lastrowid
+        return result[0][0]
+
+    def open(self):
+        """Open a connection to a database."""
+        self.db = sqlite3.connect(self.path)
+        self.c = self.db.cursor()
+
+    def close(self, commit=True):
+        """Close the connection to the database.
+
+        commit - Do a final commit? | boolean
+
+        """
+        if commit:
+            self.db.commit()
+        self.db.close()
+
+    def query(self, sql, data=()):
+        """Send a query to the database.
+
+        sql - SQL code to execute | string
+        data - Data to provide to replace ?s | tuple
+                / Not required.
+
+        """
+        if not sql.endswith(";"):
+            sql += ";"
+        self.debug_msg("SELF.QUERY sql:\n{0}\nwith data: {1}".format(sql, data))
+        self.c.execute(sql, data)
+        self.db.commit()
+        return self.c.fetchall()
+
+    # Properties Methods
+    def property_get(self, key):
+        return self.query("SELECT ? FROM Properties WHERE ID=1", (key,))[0][0]
+
+    def property_add(self, key, value=None, constraint="BLOB"):
+        # Does not really need sqli protection as it is app only facing and I can't get ? to work here.
+        self.query("ALTER TABLE Properties ADD COLUMN {0} {1}".format(key, constraint))
+        if value:
+            self.property_set(key, value)
+
+    def property_set(self, key, value):
+        columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
+        if key in columns: # A bit of sqli protection as I could not get ? to work.
+            self.query("UPDATE Properties SET {0} = ? WHERE ID=1".format(key), (value,))
+
+    # Filter Methods
     def filter_add(self, filters, name=None):
         """Add a filter to the filter table.
 
@@ -215,127 +313,65 @@ class Handler(Tools):
         sql = "SELECT OfferID FROM Offers JOIN Products ON Offers.ProductID = Products.ProductID" + args
         return self.query(sql)
 
-    def clean_up(self, displayed=False):
-        """Remove all inactive (and displayed) offers
 
-        displayed - Removed displayed offers | boolean
+class Updater(Thread_tools, Handler, Thread):
+    """Thread class to update the database in the background."""
 
-        """
-        self.query("DELETE FROM Offers WHERE Active=0")
-        if displayed:
-            self.query("DELETE FROM Offers WHERE Displayed=1")
+    def __init__(self, path=".\pcpp_offers.sqlite3", country="uk", *args, **kwargs):
+        """Initialization.
 
-    def get_product_id(self, item):
-        """Get a products id.
-
-        item - all item data | dict
+        **kwargs -  path - Database file path | string
+                    country - PCPP country code | string
+                    debug = debug object
+                    run - autorun? | boolean
 
         """
-        result = self.query("SELECT ProductID FROM Products WHERE Name=?", (item["name"],))
-        self.debug_msg("FIND PROD ID: {0}".format(result))
-        if len(result) < 1:
-            self.debug_msg("Adding...")
-            self.query("INSERT INTO Products(Name, ProductTypeID, PCPP_URL) VALUES (?,?,?)",
-                       (item["name"], self.get_product_type_id(item["catagorty"]), item["pcpp url"]))
-            self.debug_msg("Added")
-            return self.c.lastrowid
-        return result[0][0]
+        Thread.__init__(self)
+        self.path = path
+        countries = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us"]
+        if country not in countries:
+            raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)))
+        self.country = country
+        Thread_tools.__init__(self, *args, **kwargs)
 
-    def get_product_type_id(self, cat):
-        """Get a product catagorty id.
-
-        cat - the catagorty | sting
-
-        """
-        self.debug_msg("GET PROD TYPE ID: {0}".format(cat))
-        result = self.query("SELECT ProductTypeID FROM ProductTypes WHERE Description=?", (cat,))
-        self.debug_msg("RESULTS: {0}".format(result))
-        if len(result) < 1:
-            self.query("INSERT INTO ProductTypes(Description) VALUES (?)", (cat,))
-            return self.c.lastrowid
-        return result[0][0]
-
-    def first_setup(self):
-        """First time setup."""
-        self.query("PRAGMA foreign_keys = ON")
-        self.query("""CREATE TABLE IF NOT EXISTS Products(
-                                                     ProductID integer,
-                                                     Name text,
-                                                     ProductTypeID integer,
-                                                     PCPP_URL text,
-                                                     Primary Key(ProductID),
-                                                     Foreign Key(ProductTypeID) references ProductTypes(ProductTypeID));""")
-        self.query("""CREATE TABLE IF NOT EXISTS ProductTypes(
-                                                     ProductTypeID integer,
-                                                     Description text,
-                                                     Primary Key(ProductTypeID));""")
-        self.query("""CREATE TABLE IF NOT EXISTS Offers(
-                                                     OfferID integer,
-                                                     Active integer,
-                                                     Displayed integer,
-                                                     ProductID integer,
-                                                     Normal_Price real,
-                                                     Offer_Price real,
-                                                     Shop_URL text,
-                                                     Shop_Name text,
-                                                     Updated real,
-                                                     Flames integer,
-                                                     Primary Key(OfferID),
-                                                     Foreign Key(ProductID) references Products(ProductID));""")
-        self.query("""CREATE TABLE IF NOT EXISTS Filters(
-                                                     FilterID integer,
-                                                     Name text,
-                                                     Filter text,
-                                                     Date_Time real,
-                                                     Primary Key(FilterID));""")
-        self.query("""CREATE TABLE IF NOT EXISTS Properties(
-                                                     ID integer,
-                                                     Primary Key(ID))""")
-        self.query("""INSERT OR IGNORE INTO Properties(ID) VALUES(1)""")
-
-    def open(self):
-        """Open a connection to a database."""
-        self.db = sqlite3.connect(self.path)
-        self.c = self.db.cursor()
-
-    def close(self, commit=True):
-        """Close the connection to the database.
-
-        commit - Do a final commit? | boolean
-
-        """
-        if commit:
-            self.db.commit()
-        self.db.close()
-
-    def query(self, sql, data=()):
-        """Send a query to the database.
-
-        sql - SQL code to execute | string
-        data - Data to provide to replace ?s | tuple
-                / Not required.
-
-        """
-        if not sql.endswith(";"):
-            sql += ";"
-        self.debug_msg("SELF.QUERY sql:\n{0}\nwith data: {1}".format(sql, data))
-        self.c.execute(sql, data)
+    def run(self):
+        """Update the database to the lastest PCPP data."""
+        self.open()
+        data = Scraper(self.country, debug=self.debug)
+        actives = []
+        for item in data:
+            # Check if offer already in offers table.
+            result = self.query("SELECT OfferID FROM Offers WHERE ProductID=? AND Active=1 \
+                                 AND Normal_Price=? AND Offer_Price=? AND \
+                                 Shop_Name=? AND Shop_URL=?",
+                                (self.get_product_id(item), item["normal price"],
+                                 item["offer price"], item["shop name"], item["shop url"]))
+            # Was it?
+            if len(result) < 1:
+                # No? Adding it.
+                self.query("INSERT INTO Offers(ProductID, Active, Displayed, Normal_Price, Offer_Price, \
+                            Shop_URL, Shop_Name, Updated, Flames) VALUES (?,1,0,?,?,?,?,?,?)",
+                           (self.get_product_id(item), item["normal price"], item["offer price"],
+                            item["shop url"], item["shop name"], item["time"], item["flames"]))
+                actives.append(self.c.lastrowid)
+                continue
+            # Was, updating to lastest time and highest flames.
+            result = result[0][0]
+            flames = self.query("SELECT Flames FROM Offers WHERE OfferID=?", (result,))[0][0]
+            if item["flames"] > flames:
+                flames = item["flames"]
+            self.query("UPDATE Offers SET Updated=?, Flames=? WHERE OfferID=?", (item["time"], flames, result))
+            actives.append(result)
+        # Setup Offers not in lasest scrap to Inactive.
+        results = self.query("SELECT OfferID FROM Offers WHERE Active=1")
+        inactives = []
+        for item in results:
+            if item[0] not in actives:
+                inactives.append((item[0],))
+        self.c.executemany("UPDATE Offers SET Active=0 WHERE OfferID=?", inactives)
         self.db.commit()
-        return self.c.fetchall()
-
-    def property_get(self, key):
-        return self.query("SELECT ? FROM Properties WHERE ID=1", (key,))[0][0]
-
-    def property_add(self, key, value=None, constraint="BLOB"):
-        # Does not really need sqli protection as it is app only facing and I can't get ? to work here.
-        self.query("ALTER TABLE Properties ADD COLUMN {0} {1}".format(key, constraint))
-        if value:
-            self.property_set(key, value)
-
-    def property_set(self, key, value):
-        columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
-        if key in columns: # A bit of sqli protection as I could not get ? to work.
-            self.query("UPDATE Properties SET {0} = ? WHERE ID=1".format(key), (value,))
+        self.close()
+        return None
 
 
 if __name__ == '__main__':
