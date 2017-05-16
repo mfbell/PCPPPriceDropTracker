@@ -12,8 +12,8 @@ URL: {4}
 
 AUTHOR = "mtech0 | https://github.com/mtech0"
 LICENSE = "GNU-GPLv3 | https://www.gnu.org/licenses/gpl.txt"
-VERSION = "0.0.0"
-STATUS = "Development"
+VERSION = "0.5.0"
+STATUS = "Ongoing development"
 URL = ""
 __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
