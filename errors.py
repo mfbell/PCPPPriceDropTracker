@@ -21,11 +21,11 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 class Error(Exception):
     """General Error class."""
 
-    def __init__(self, msg=None):
+    def __init__(self, msg=None, *args):
         """Error Raising."""
         if not msg:
             msg = self.__doc__
-        super(Error, self).__init__(msg)
+        super().__init__(msg)
         self.msg = msg
 
 class UnknownSiteError(Error):
@@ -39,6 +39,9 @@ class FilterError(Error):
 
 class FilterBuildError(FilterError):
     """General filter build error."""
+
+class UnknownPropertyError(Error):
+    """General unknown property error."""
 
 if __name__ == '__main__':
     main(__doc__)
