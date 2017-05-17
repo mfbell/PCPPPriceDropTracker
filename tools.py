@@ -1,4 +1,4 @@
-"""Tools for PPCPScraper.
+"""Tools for PCPPPriceDropTracker.
 
 
 
@@ -20,15 +20,8 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 from time import time
 import os
 from threading import Thread
-#from uuid import uuid4
 
-#def uuid(dict):
-#    id_ = uuid4().hex
-#    while id_ in dict:
-#        id_ = uuid4().hex
-#    return id_
-
-def main(doc=None, itu=None, pause=True):
+def main(doc=None, itu=None, pause=True, xit=True):
     """Module run as main function.
 
     doc - Either docstring or info to print | string
@@ -42,6 +35,8 @@ def main(doc=None, itu=None, pause=True):
             --> If doc=True and itu=None: itu=True
                 If doc=True and itu=False: itu=False
                 If doc=True and itu=True: itu=True
+    pause - Wait for user to press enter | boolean
+    xit - Auto exit? | boolean
 
     """
     if doc and itu == None:
@@ -52,9 +47,11 @@ def main(doc=None, itu=None, pause=True):
     if itu:
         print("Import to use.")
     print()
-    input("Press Enter to exit...")
-    print("Terminated")
-    exit(0)
+    if pause:
+        input("Press Enter to exit...")
+    if xit:
+        print("Terminated")
+        exit(0)
 
 def sys_args(*check):
     """System Arg Handler Function.
@@ -62,22 +59,27 @@ def sys_args(*check):
     Check if arg(s) were given or return all.
 
     *check - Args to compare to those give to sys | Strings
-            / If none are give, all argv given to system are returned.
+            / If none are give, argv given to system are returned.
             / If args are give, it will check if they were given to sys.
-                Returning a list of Trues/False or signal if isngle arg is given.
+                Returning a list of Trues/False or signle if single arg is given.
 
     """
     if not check:
         return sys.argv[1:]
     else:
-        re = []
-        for i in check:
-            re.append(i in sys.argv[1:])
+        re = [i in sys.argv[1:] for i in check]
         if len(re) == 1: re = re[0]
         return re
 
 class Tools():
-    """General Tool class."""
+    """General Class Tools.
+
+    Filters:
+    debug object or boolean from **kwargs.
+    log boolean from **kwargs
+    Other stuff
+    """
+
     def __init__(self, *args, **kwargs):
         """Initialization."""
         if "debug" in kwargs:

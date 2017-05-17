@@ -1,4 +1,4 @@
-"""Errors for PPCPScraper.
+"""Errors file for PCPPPriceDropTracker.
 
 
 

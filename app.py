@@ -362,9 +362,11 @@ class Menu_Bar(Tools):
 
 
 def mp():
+    """Placeholder functions."""
     return print("A menu button was pressed")
 
 def main():
+    """"""
     app = App()
     app.mainloop()
     return None
