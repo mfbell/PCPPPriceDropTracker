@@ -20,6 +20,7 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 import sqlite3
 from time import time
 import json
+from itertools import permutations
 from errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
 from tools import main, Tools, Thread_tools
 from dataScraper import Scraper
@@ -47,10 +48,110 @@ class Handler(Tools):
         return None
 
     # DB Tools or Handling Tools
-    def updater(self):
+    def updater(self, call_when_done=None):
         """Rapper method for Updater."""
-        updater = Updater(country=self.country, path=self.path, debug=self.debug, run=True)
+        updater = Updater(country=self.country, path=self.path, debug=self.debug, call_when_done=call_when_done, run=True)
         return None
+
+    def search(self, columns="*", filters=None, search_string=None, filter_data=None):
+        """Search for offer in database and return results.
+
+        columns - Column names of data to return | list
+        filters - A list of string or list of search filters | string or list
+            / E.g. "Active = 1 AND Offer_Price < 100"
+            / Or ["Active = ", 1, "OR", "Displayed = 0", "AND Shop_Name = 'Amazon'"]
+            / See 'Behaviour' below for more info.
+        search_string - A string of text to smartly* search the database for
+                        entries | string
+            / See 'Behaviour' below for more info.
+        filter_data - Data to include is there is '?' in filters data. | list
+
+        --== Behaviour ==--
+        Note: Any strings put into a query are not case sensitive as this part
+        of SQLite.
+
+        + Args +
+        - If no args are given, this will return all columns of data for entries
+          which match 'Active = 1'.
+        - If columns is not given, all columns' data will be returned.
+          This is the row from Offers and corresponding data from Products
+        - If filters is not given or has a false/none value, filters will not be
+          included. Spaces will be put around all strings in a list or around a
+          given string.
+        - If search_string is not give or has a false/none value, it will not be
+          included in the query.
+
+        + Smart Search +
+        Smart Search starts with the string in search_string. It first splits
+        the string and then strips each part.
+            If over six words long, the possible combinations exceeds SQLite
+            query expression limit. For now a linear search is done with the
+            words reassembed in order joined, prefix and sufexed with wildcards.
+            This may change in the future to use different orders.
+        If there is no words the search will now neglect to include smart search.
+        Now all combinations are generated from the words: This is all different
+        ways the words can be arranged, then joined, prefix and sufexed with
+        wildcards.
+        In the search all these are listed in the query under 'Name LIKE <str>
+        OR ...'. At the moment smart search is limited to Name only but I hope
+        to expand to other columns, however this will reduce the possible length
+        of searches as expressions will have to be spread over more conditions.
+        Example:
+        "Intel Core" ->
+        ["Intel", "Core"] ->
+        [("Intel", "Core"), ("Core", "Intel")] ->
+        ["%Intel%Core%", "%Core%Intel%"] ->
+        SQL: "...
+              WHERE [<conditions> AND]
+                  (Name LIKE '%Intel%Core%' OR Name LIKE '%Core%Intel%')" =>
+        Return ...
+
+        + Returns +
+        If there is no results None is returned.
+        If there is, results will be returned as: (Entry, Entry, ...)
+        Where Entries are rows in Offers (with Products data) which fit
+        conditions given to the SQL query.
+        Entries will contrain the tuple of the column data of the entry in order
+        which it was requested. See Behaviour->Args->columns for more info.
+
+        --== Future Updates ==--
+        See a doc I will create for this at some point.
+            Stuff like all column smart searching, rank results by relivance eta.
+
+        """
+        # Smart Search
+        if not search_string:
+            search_string = ""
+        words = [word.strip() for word in search_string.split()]
+        results = []
+        if len(words) > 6:
+            results.append(("Possible search combinations exceeds SQLite expression limit. Using linear search.", "ErrorMessage"))
+            combinations = ["%" + "%".join(word for word in words) + "%"] # Could do up to so many combinations
+        elif not words:
+            combinations = []
+            combinations_str = ""
+        else:
+            combinations = ["%" + "%".join(order) + "%" for order in list(permutations(words))]
+        if combinations:
+            combinations_str = "(Name LIKE {0})".format(" OR Name LIKE ".join("?" for _ in combinations))
+        # Search Filter
+        if isinstance(filters, list):
+            filters = " ".join(filters)
+        elif not isinstance(filters, str):
+            filters = "''=''"
+        if combinations:
+            filters += " AND "
+        # Query
+        if filter_data:
+            combinations = filter_data + combinations
+        results += self.query("""SELECT {0} FROM Offers
+                                     JOIN Products ON Offers.ProductID = Products.ProductID
+                                 WHERE {1}
+                                     {2}""".format(", ".join(columns),
+                                                   filters,
+                                                   combinations_str),
+                              combinations)
+        return results
 
     def first_setup(self):
         """First time setup.
@@ -358,19 +459,20 @@ class Handler(Tools):
         return self.query(sql, values)
 
 
-class Updater(Thread_tools, Handler):
-    """Database background updater."""
+class Updater(Handler, Thread_tools):
+    """Update the database to the lastest PCPP data."""
 
     def __init__(self, path=".\pcpp_offers.sqlite3", country="uk", *args, **kwargs):
         """Initialization.
 
-        path - Database file path | string
-        country - PCPP country code | string
-        **kwargs -  debug = debug object
-                    run - autorun? | boolean
+        Same args as Handler.
+        Plus call_when_done, a function to call when done, no args.
+        run - Autorun | boolean
 
+        Was going to use Handler's but could not get it working as sqlite3
+        objects but be created inside the same thread... but i did it in
+        run so???
         """
-        # Could use Handler.__init__ but need custom really...
         self.path = path
         countries = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us"]
         if country not in countries:
@@ -379,8 +481,9 @@ class Updater(Thread_tools, Handler):
         Thread_tools.__init__(self, *args, **kwargs)
 
     def run(self):
-        """Update the database to the lastest PCPP data."""
-        self.open() # Must be db connection opened in the thread used from.
+        """Run the updater."""
+        self.open()
+        self.first_setup()
         data = Scraper(self.country, debug=self.debug)
         actives = []
         for item in data:
@@ -414,6 +517,8 @@ class Updater(Thread_tools, Handler):
         self.c.executemany("UPDATE Offers SET Active=0 WHERE OfferID=?", inactives)
         self.db.commit()
         self.close() # Must
+        if "call_when_done" in self.kwargs:
+            self.kwargs["call_when_done"]()
         return None
 
 
