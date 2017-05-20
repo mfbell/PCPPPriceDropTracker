@@ -19,20 +19,9 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 import tkinter as tk
 import tkinter.ttk as ttk
-from itertools import permutations
 from DBHandler import Handler
 from tools import Tools
-
-
-class Panel(ttk.Frame, Tools):
-    """Parent panel class."""
-
-    def __init__(self, root, *args, **kwargs):
-        """Initialization. Same args as ttk.Frame and Tools."""
-        self.root = root
-        Tools.__init__(self, *args, **kwargs)
-        ttk.Frame.__init__(self, self.root, *self.args, **self.kwargs)
-        return None
+from customWidgets import Panel, MessageBox
 
 
 class App(Panel):
@@ -54,6 +43,7 @@ class App(Panel):
         if not "padding" in kwargs:
             kwargs["padding"] = (12, 6, 6, 6)
         super().__init__(root, *args, **kwargs)
+        #self.debug(True)
         self.pack()
         if not self.db_handler:
             self.db_handler = Handler(debug=self.debug)
@@ -62,13 +52,18 @@ class App(Panel):
         self.root.title("PCPPPriceDropTracker {0}".format(VERSION))
         self.root.option_add('*tearOff', False)
             # ColName:[DisplayName, width (-1=Default)]
-        self.show_columns = {"Name":["Name", 500], "OfferID":["OfferID", -1]}
+        self.show_columns = {"Name":["Name", 450],
+                             "Normal_Price":["Normal Price", -1],
+                             "Offer_Price":["Offer Price", -1],
+                             "Flames": ["Flames", 75],
+                             "Active": ["Active", 100]
+                             }
         # Content
         self.title_zone = Title_Panel(self, debug=self.debug)
+        self.search_filters = Search_Filter_Panel(self, debug=self.debug)
         self.right_bar = ttk.Separator(self, orient="vertical")
         self.search_box = Search_Box(self, debug=self.debug)
         self.results_panel = Results_Panel(self, borderwidth=2, relief="sunken", debug=self.debug)
-        self.search_filters = Search_Filter_Panel(self, debug=self.debug)
         self.status_bar = Status_Bar(self, debug=self.debug)
         self.menu_bar = Menu_Bar(self)
         self.side_options = Side_Options(self, debug=self.debug)
@@ -80,7 +75,7 @@ class App(Panel):
         self.search_box.grid(column=8, row=1, pady=(9,3))
         self.results_panel.grid(column=8, row=2)
         self.search_filters.grid(column=6, row=2, sticky="n", padx=(0,6), pady=(3))
-        self.status_bar.grid(column=0, row=99, columnspan=32)
+        self.status_bar.grid(column=0, row=99, columnspan=32, sticky="s")
         #self.left_bar.grid(column=7, row=2, sticky="ns", padx=(6), pady=(3))
         return None
 
@@ -122,37 +117,24 @@ class Search_Box(Panel):
 
     def search(self, *args, **kwargs):
         """Search for offer in database and display results."""
-        if not "external" in kwargs or not kwargs["external"]:
-            self.root.results_panel.clear()
-        words = [word.strip() for word in self.search_text.get().split()]
-        results = []
-        if len(words) > 6:
-            results.append(("Possible search combinations exceeds SQLite expression limit. Using linear search.", "ErrorMessage"))
-            words = ["%".join(word for word in words)]
-        self.debug_msg("Words: {0}".format(words))
-        if not words:
-            results = self.get_all()
-        else:
-            combinations = ["%" + "%".join(order) + "%" for order in list(permutations(words))]
-            results += self.root.db_handler.query("""SELECT {0} FROM Offers
-                                                         JOIN Products ON Offers.ProductID = Products.ProductID
-                                                     WHERE Active=1 AND
-                                                         (Name LIKE {1})""".format(", ".join(self.root.show_columns),
-                                                                                   " OR Name LIKE ".join("?" for _ in combinations)),
-                                                  combinations)
+        self.debug_msg("Search in Search_Box called")
+        string = self.search_text.get()
+        self.debug_msg("Search string is: "+string)
+        if not string or string == "":
+            self.debug_msg("Nothing in string, showing all with filters")
+            return self.root.results_panel.show_all_w_filters()
+        results = self.root.db_handler.search(self.root.show_columns, self.root.search_filters.get(), string)
         if not results:
             return None
-        elif "external" in kwargs and kwargs["external"] == True:
+        elif "external" in kwargs and kwargs["external"]:
             Results_Panel(tk.Tk(), debug=self.debug, open_search_data=[self.root.show_columns, self.search_text.get(), results])
             return None
+        self.root.results_panel.clear()
         return self.root.results_panel.add(results)
 
     def external_open(self):
         """Search external open rapper method."""
         return self.search(external=True)
-
-    def get_all(self):
-        return self.root.db_handler.query("SELECT Name, OfferID FROM Offers JOIN Products ON Offers.ProductID = Products.ProductID WHERE Active=1")
 
 
 class Results_Panel(Panel):
@@ -174,7 +156,7 @@ class Results_Panel(Panel):
         super().__init__(root, *args, **kwargs)
         if not data:
             self.columns = self.root.show_columns
-        self.tree = ttk.Treeview(self, column=([col for col in self.columns][1:]), height=20)
+        self.tree = ttk.Treeview(self, column=([col for col in self.columns][1:]), height=25)
         first = True
         for col in self.columns:
             if first:
@@ -190,27 +172,23 @@ class Results_Panel(Panel):
         # Packing
         self.tree.grid(column=0, row=0)
         self.ybar.grid(column=1, row=0, sticky="ns")
-
         if data:
             self.root.title("Search Results: '{0}'".format(self.search_text))
             self.pack()
             self.add(data)
         else:
-            self.show_all() # Remember this is done on first creation.
+            self.show_all_w_filters() # Remember this is done on first creation.
         return None
 
     def clear(self):
         """Clear the Treeview/results."""
-        self.tree.delete(*self.tree.get_children())
-        return None
+        return self.tree.delete(*self.tree.get_children())
 
-    def show_all(self):
+    def show_all_w_filters(self):
         """Show all <conditions -only active=1 at the moment> offers."""
         self.clear()
-        results = self.root.db_handler.query("SELECT Name, OfferID FROM Offers JOIN Products ON Offers.ProductID = Products.ProductID WHERE Active=1")
-        for item in results:
-            self.tree.insert('', 'end', text=item[0], values=(item[1]))
-        return None
+        results = self.root.db_handler.search(self.root.show_columns, self.root.search_filters.get(), None)
+        return self.add(results)
 
     def add_by_id(self, ids):
         """Add offer to the Treeview by OfferID.
@@ -221,9 +199,7 @@ class Results_Panel(Panel):
         if isinstance(ids[0], tuple):
             wasIds = ids
             ids = [id[0] for id in wasIds]
-        results = self.root.db_handler.query("""SELECT Name, OfferID FROM Offers
-                                                    JOIN Products ON Offers.ProductID = Products.ProductID
-                                                WHERE OfferID in ({0})""".format(", ".join("?" for _ in ids)), ids)
+        results = self.root.db_handler.search(self.root.show_columns, "(OfferID = {0})".format(" OR OfferID = ".join("?")), None, ids)
         return self.add(results)
 
     def add(self, data):
@@ -232,7 +208,7 @@ class Results_Panel(Panel):
         data - Results to add | [[col1, col2, ...], ...] or tuplised
         """
         for item in data:
-            self.tree.insert('', "end", text=item[0], values=(item[1]))
+            self.tree.insert('', "end", text=item[0], values=(item[1:]))
         return None
 
 
@@ -243,11 +219,11 @@ class Side_Options(Panel):
         """Initialization. Args as of Panel."""
         super().__init__(root, *args, **kwargs)
 
-        self.update = ttk.Button(self, text="Update", command=self.root.db_handler.updater)
+        self.update = ttk.Button(self, text="Update", command=lambda: Update_Hanlder(self.root))
         self.add_filter = ttk.Button(self, text="Add Filter", command=self.root.add_filter)
         self.run_filter = ttk.Button(self, text="Run Filters", command=self.root.run_filters)
         self.clear_db = ttk.Button(self, text="Clean DB", command=self.root.db_handler.clean_up)
-        self.show_all = ttk.Button(self, text="Show All", command=self.root.results_panel.show_all)
+        self.show_all = ttk.Button(self, text="Show All", command=self.root.results_panel.show_all_w_filters)
         self.debug_status = tk.StringVar()
         self.debug_button = ttk.Button(self, textvariable=self.debug_status, command=self.debug_change)
         self.log_status = tk.StringVar()
@@ -312,6 +288,10 @@ class Search_Filter_Panel(Panel):
         self.text.grid(column=0, row=0)
         return None
 
+    def get(self):
+        """Get a formated filter string."""
+        return "Active = 1"
+
 
 class Status_Bar(Panel):
     """Bottom info bar. Needs to be rewriten into own frame."""
@@ -347,17 +327,52 @@ class Menu_Bar(Tools):
         # Could not get making this class a menu object working.
         self.root.root["menu"] = self.menu
 
-        # Content
+        # Drop downs
         self.file_menu = tk.Menu(self.menu)
         self.file_menu.add_command(label="Open...", command=mp)
         self.file_menu.add_command(label="Close.", command=mp)
+        #
         self.edit_menu = tk.Menu(self.menu)
         self.edit_menu.add_command(label="Change country", command=mp)
         self.edit_menu.add_command(label="Another", command=mp)
-        # Packing
+        # On bar
         self.menu.add_cascade(menu=self.file_menu, label='File')
         self.menu.add_cascade(menu=self.edit_menu, label='Edit')
-        self.menu.add_command(label="Update", command=mp)
+        self.menu.add_command(label="Update", command=lambda: Update_Hanlder(self.root))
+        return None
+
+
+class Update_Hanlder(Tools):
+    """Database updater handler."""
+
+    def __init__(self, root):
+        """Initialization."""
+        self.root = root
+        self.create_popup()
+        self.root.db_handler.updater(self.popup_updater)
+        return None
+
+    def create_popup(self):
+        self.text = tk.StringVar()
+        self.button = tk.StringVar()
+        self.text.set("Updating local database...")
+        self.button.set("Hide")
+        self.msg_box = MessageBox(msg=self.text,
+                                  buttons={"1":[self.button, "WITHDRAW"]},
+                                  title="Updating",
+                                  icon="info_icon.png")
+        return None
+
+    def popup_updater(self):
+        self.text.set("Updated local database")
+        self.button.set("Close")
+        self.msg_box.buttons["1"]["command"] = self.update_and_close
+        self.msg_box.deiconify()
+        return None
+
+    def update_and_close(self):
+        self.msg_box.destroy()
+        self.root.search_box.search()
         return None
 
 
