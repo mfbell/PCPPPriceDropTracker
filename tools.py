@@ -47,11 +47,14 @@ def main(doc=None, itu=None, pause=True, xit=True):
     if itu:
         print("Import to use.")
     print()
-    if pause:
-        input("Press Enter to exit...")
     if xit:
+        if pause:
+            print("Press Enter to exit...")
         print("Terminated")
         exit(0)
+    elif pause:
+        input("Press Enter to continue...")
+
 
 def sys_args(*check):
     """System Arg Handler Function.
@@ -150,8 +153,9 @@ class Thread_tools(Tools, Thread):
 
     def autorun(self):
         """Autorun thread if kwargs["run"] is True."""
-        if self.kwargs["run"]:
+        if "run" in self.kwargs and self.kwargs["run"]:
             self.start()
+
 
 if __name__ == '__main__':
     main(__doc__)
