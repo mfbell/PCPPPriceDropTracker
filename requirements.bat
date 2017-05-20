@@ -10,5 +10,6 @@
 @echo OFF
 pip install beautifulsoup4
 pip install requests
-python -c "import bs4; import requests; print('[Test]: Successful :)');"
+pip install Pillow
+python -c "import bs4; import requests; import PIL, print('[Test]: Successful :)');"
 PAUSE
