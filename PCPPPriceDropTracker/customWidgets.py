@@ -21,8 +21,8 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 import tkinter as tk
 import tkinter.ttk as ttk
 from PIL import ImageTk, Image
-from tools import Tools, Thread_tools
-from tools import main as mainprint
+from .tools import Tools, Thread_tools
+from .tools import main as mainprint
 
 
 class Panel(ttk.Frame, Tools):

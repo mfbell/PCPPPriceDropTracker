@@ -20,8 +20,8 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 from bs4 import BeautifulSoup
 import requests
 from time import time
-from errors import UnknownCountryError
-from tools import main
+from .errors import UnknownCountryError
+from .tools import main
 
 
 def Scraper(country="uk", *args, **kwargs):

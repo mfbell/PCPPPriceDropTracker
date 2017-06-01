@@ -20,6 +20,7 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 from time import time
 import os
 from threading import Thread
+import logging
 
 def main(doc=None, itu=None, pause=True, xit=True):
     """Module run as main function.
@@ -55,7 +56,6 @@ def main(doc=None, itu=None, pause=True, xit=True):
     elif pause:
         input("Press Enter to continue...")
 
-
 def sys_args(*check):
     """System Arg Handler Function.
 
@@ -74,10 +74,13 @@ def sys_args(*check):
         if len(re) == 1: re = re[0]
         return re
 
+def logging_setup(name, file=".\logging.conf"):
+    print(name)
+
 class Tools():
     """General Class Tools.
 
-    Filters:
+    Filters
     debug object or boolean from **kwargs.
     log boolean from **kwargs
     Other stuff

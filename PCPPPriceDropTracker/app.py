@@ -19,9 +19,10 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 import tkinter as tk
 import tkinter.ttk as ttk
-from DBHandler import Handler
-from tools import Tools
-from customWidgets import Panel, MessageBox
+from .DBHandler import Handler
+from .tools import Tools
+from .customWidgets import Panel, MessageBox
+
 
 
 class App(Panel):
@@ -360,7 +361,7 @@ class Update_Hanlder(Tools):
         self.msg_box = MessageBox(msg=self.text,
                                   buttons={"1":[self.button, "WITHDRAW"]},
                                   title="Updating",
-                                  icon="info_icon.png")
+                                  icon=".\imgs\info_icon.png")
         return None
 
     def popup_updater(self):

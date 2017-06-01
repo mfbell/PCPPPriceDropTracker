@@ -21,9 +21,9 @@ import sqlite3
 from time import time
 import json
 from itertools import permutations
-from errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
-from tools import main, Tools, Thread_tools
-from dataScraper import Scraper
+from .errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
+from .tools import main, Tools, Thread_tools
+from .dataScraper import Scraper
 
 class Handler(Tools):
     """The database handler."""
