@@ -1,4 +1,4 @@
-"""Project folder top-level functions.
+"""Project folder top-level functions for PCPPPriceDropTracker.
 
 
 
@@ -21,6 +21,8 @@ from .tools import main
 from .app import main as app_main
 
 def run():
+    from .log_setup import setup
+    setup()
     app_main()
 
 if __name__ == '__main__':
