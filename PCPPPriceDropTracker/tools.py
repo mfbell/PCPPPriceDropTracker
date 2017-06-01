@@ -43,7 +43,7 @@ def main(doc=None, itu=None, pause=True, xit=True):
     if doc and itu == None:
         itu = True
     if not doc:
-        doc = open("README.md", "r").read()
+        doc = open("README.md").read()
     print("\n" + doc)
     if itu:
         print("Import to use.")
@@ -74,80 +74,25 @@ def sys_args(*check):
         if len(re) == 1: re = re[0]
         return re
 
-def logging_setup(name, file=".\logging.conf"):
-    print(name)
-
 class Tools():
-    """General Class Tools.
-
-    Filters
-    debug object or boolean from **kwargs.
-    log boolean from **kwargs
-    Other stuff
-    """
+    """General Class Tools."""
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
         if "debug" in kwargs:
-            self.debug = kwargs["debug"]
-            del(kwargs["debug"])
-        else:
-            self.debug_ = False
-        if "log" in kwargs:
-            self.log_ = True
-            self.log_p = kwargs["log"]
-            del(kwargs["log"])
-        else:
-            self.log_ = False
-            self.log_p = False
+            del(kwargs["debug"]) # Cleaning, to be removed when codes in updated
         self.args = args
         self.kwargs = kwargs
-        self.debug_msg(self.__doc__.splitlines()[0][:-1] + " initialized.")
 
-    def debug_msg(self, msg):
-        """Debug message printer. if True.
+    def debug(self, *args, **kwargs): # Removed when other code cleaned
+        pass
 
-        Looks for the method self.debug to know if to print as it returns T/F
-        msg - Msg to print | string
-        """
-        if self.debug():
-            if "\n" in msg:
-                print("[DEBUGGING]:\n", msg, "\n[/-------]")
-            else:
-                print("[DEBUGGING]:", msg)
-            if self.debug(log="get"):
-                if isinstance(self.log_p, str):
-                    log_file = open(self.log_p, "a")
-                else:
-                    path = ".\logs"
-                    if not os.path.exists(path):
-                        os.makedirs(path)
-                    n_time = round(time())
-                    self.log_p = path + "\log-{0}.txt".format(n_time)
-                    log_file = open(self.log_p, "a")
-                    log_file.write("#====================\n# Log file started at {0}.\n#====================\n\n".format(n_time))
-                log_file.write(str(time()) + " --- " + msg + "\n")
-                log_file.close()
-
-    def debug(self, set_=None, log=None):
-        if log == True:
-            self.debug_ = True
-            self.log_ = True
-        elif log == False:
-            self.log_ = False
-        elif set_ == False:
-            self.debug_ = False
-            self.log_ = False
-        elif set_ == True:
-            self.debug_ = True
-        elif log == "get":
-            return self.log_
-        else:
-            return self.debug_
-
+    def debug_msg(self, *args, **kwargs): # Removed when other code cleaned
+        pass
 
 class Thread_tools(Tools, Thread):
-    """A set of thread class tools."""
+    """Threading Class Tools."""
+
     def __init__(self, *args, **kwargs):
         """Initialization."""
         Thread.__init__(self)
