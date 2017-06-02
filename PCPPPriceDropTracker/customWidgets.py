@@ -21,6 +21,7 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 import tkinter as tk
 import tkinter.ttk as ttk
 from PIL import ImageTk, Image
+from logging import getLogger
 from .tools import Tools, Thread_tools
 from .tools import main as mainprint
 
@@ -30,6 +31,7 @@ class Panel(ttk.Frame, Tools):
 
     def __init__(self, root, *args, **kwargs):
         """Initialization. Same args as ttk.Frame and Tools."""
+        getLogger(__name__+".Panel.__init__").debug("Panel object called.")
         self.root = root
         Tools.__init__(self, *args, **kwargs)
         ttk.Frame.__init__(self, self.root, *self.args, **self.kwargs)
@@ -61,6 +63,8 @@ class MessageBox(tk.Toplevel, Tools):
         Entry box maybe?
 
         """
+        logger = getLogger(__name__+".MessageBox.__init__")
+        logger.debug("MessageBox initialization.")
         tk.Toplevel.__init__(self)
         if "msg" in kwargs:
             msg = kwargs["msg"]
@@ -68,18 +72,22 @@ class MessageBox(tk.Toplevel, Tools):
                 msg = [msg]
         else:
             msg = []
+        logger.debug("Messages: {0}".format(msg))
         if "title" in kwargs:
             self.title = kwargs["title"]
         else:
             self.title = "Message"
+        logger.debug("Title: {0}".format(self.title))
         if "icon" in kwargs:
             icon_path = kwargs["icon"]
         else:
-            icon_path = ".\info_icon.png"
+            icon_path = ".\PCPPPriceDropTracker\imgs\info_icon.png"
+        logger.debug("Icon path: {0}".format(icon_path))
         if "buttons" in kwargs:
             buttons = kwargs["buttons"]
         else:
             buttons = {}
+        logger.debug("Buttons: {0}".format(buttons))
         if not "padding" in kwargs:
             kwargs["padding"] = 10
         Tools.__init__(self, *args, **kwargs)
@@ -106,7 +114,7 @@ class MessageBox(tk.Toplevel, Tools):
             self.icon = ttk.Label(self.main, image=self.icon_image)
             self.icon.grid(column=2, row=4, rowspan=c-4, pady=6, padx=6)
         except FileNotFoundError:
-            pass
+            logger.exception("FileNotFoundError while adding icon.")
 
         # Splitter
         self.bar = ttk.Separator(self.main, orient="horizontal")
@@ -133,10 +141,8 @@ class MessageBox(tk.Toplevel, Tools):
             self.focus_set()
         if "grab" in kwargs and kwargs["grab"]:
             self.grab_set()
-
-
-
-
+        logger.debug("MessageBox setup.")
+        return None
 
 def main():
     mainprint(__doc__, xit=False)

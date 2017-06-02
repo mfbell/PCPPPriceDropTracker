@@ -20,7 +20,7 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 from time import time
 import os
 from threading import Thread
-import logging
+from logging import getLogger as gl
 
 def main(doc=None, itu=None, pause=True, xit=True):
     """Module run as main function.
@@ -79,6 +79,7 @@ class Tools():
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
+        gl(__name__+".Tools.__init__").debug("Tools Class called")
         if "debug" in kwargs:
             del(kwargs["debug"]) # Cleaning, to be removed when codes in updated
         self.args = args
@@ -95,13 +96,17 @@ class Thread_tools(Tools, Thread):
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
+        gl(__name__+".Thread_tools.__init__").debug("Thread_tools Class called.")
         Thread.__init__(self)
         Tools.__init__(self, *args, **kwargs)
         self.autorun()
 
     def autorun(self):
         """Autorun thread if kwargs["run"] is True."""
+        logger = gl(__name__+".Tools.autorun")
+        logger.debug("Autorun called.")
         if "run" in self.kwargs and self.kwargs["run"]:
+            logger.debug("Autorunning.")
             self.start()
 
 

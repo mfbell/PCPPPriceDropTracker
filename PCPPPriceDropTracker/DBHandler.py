@@ -21,9 +21,10 @@ import sqlite3
 from time import time
 import json
 from itertools import permutations
+from logging import getLogger
 from .errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
 from .tools import main, Tools, Thread_tools
-from .dataScraper import Scraper
+from .dataScraper import scraper
 
 class Handler(Tools):
     """The database handler."""
@@ -37,6 +38,8 @@ class Handler(Tools):
         **kwargs - debug = debug object
 
         """
+        logger = getLogger(__name__+".Handler.__init__")
+        logger.debug("Database handler initalization.")
         self.path = path
         countries = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us"]
         if country not in countries:
@@ -45,11 +48,13 @@ class Handler(Tools):
         super().__init__(*args, **kwargs)
         self.open()
         self.first_setup()
+        logger.debug("Database handler setup complete.")
         return None
 
     # DB Tools or Handling Tools
     def updater(self, call_when_done=None):
         """Rapper method for Updater."""
+        getLogger(__name__+".Handler.updater").debug("Updater rapper called.")
         updater = Updater(country=self.country, path=self.path, debug=self.debug, call_when_done=call_when_done, run=True)
         return None
 
@@ -64,7 +69,7 @@ class Handler(Tools):
         search_string - A string of text to smartly* search the database for
                         entries | string
             / See 'Behaviour' below for more info.
-        filter_data - Data to include is there is '?' in filters data. | list
+        filter_data - Data to include if there is '?' in filters data. | list
 
         --== Behaviour ==--
         Note: Any strings put into a query are not case sensitive as this part
@@ -119,19 +124,25 @@ class Handler(Tools):
             Stuff like all column smart searching, rank results by relivance eta.
 
         """
+        logger = getLogger(__name__+".Handler.search")
+        logger.debug("Search method called.")
         # Smart Search
         if not search_string:
             search_string = ""
         words = [word.strip() for word in search_string.split()]
+        logger.debug("Words from string: {0}".format(words))
         results = []
         if len(words) > 6:
             results.append(("Possible search combinations exceeds SQLite expression limit. Using linear search.", "ErrorMessage"))
+            logger.info("Possible search combinations exceeds SQLite expression limit. Using linear search.")
             combinations = ["%" + "%".join(word for word in words) + "%"] # Could do up to so many combinations
         elif not words:
             combinations = []
             combinations_str = ""
+            logger.debug("No combinations created.")
         else:
             combinations = ["%" + "%".join(order) + "%" for order in list(permutations(words))]
+            logger.debug("Full search can be done.")
         if combinations:
             combinations_str = "(Name LIKE {0})".format(" OR Name LIKE ".join("?" for _ in combinations))
         # Search Filter
@@ -141,6 +152,7 @@ class Handler(Tools):
             filters = "''=''"
         if combinations:
             filters += " AND "
+        logger.debug("Filters are: {0}".format(filters))
         # Query
         if filter_data:
             combinations = filter_data + combinations
@@ -151,6 +163,7 @@ class Handler(Tools):
                                                    filters,
                                                    combinations_str),
                               combinations)
+        logger.debug("Search complete.")
         return results
 
     def first_setup(self):
@@ -159,6 +172,8 @@ class Handler(Tools):
         Also run when connecting to check all tables exist eta.
 
         """
+        logger = getLogger(__name__+".Handler.first_setup")
+        logger.debug("first_setup called.")
         self.query("PRAGMA foreign_keys = ON;")
         self.query("""CREATE TABLE IF NOT EXISTS Products(
                                                      ProductID integer,
@@ -194,6 +209,7 @@ class Handler(Tools):
                                                      ID integer,
                                                      Primary Key(ID));""")
         self.query("""INSERT OR IGNORE INTO Properties(ID) VALUES(1);""")
+        logger.debug("first_setup successful.")
         return None
 
     def clean_up(self, displayed=False):
@@ -202,6 +218,7 @@ class Handler(Tools):
         displayed - Removed displayed offers | boolean
 
         """
+        getLogger(__name__+".Handler.clean_up").debug("clean_up called, removing non-active entries, removing displayed: {0}".formated(displayed))
         self.query("DELETE FROM Offers WHERE Active=0")
         if displayed:
             self.query("DELETE FROM Offers WHERE Displayed=1")
@@ -213,13 +230,14 @@ class Handler(Tools):
         item - all item data | dict
 
         """
+        logger = getLogger(__name__+".Handler.get_product_id")
+        logger.debug("Call to get_product_id.")
         results = self.query("SELECT ProductID FROM Products WHERE Name=?", (item["name"],))
-        self.debug_msg("FIND PRODUCT ID: {0}".format(results))
+        logger.debug("Result: {0}".format(results))
         if len(results) < 1:
-            self.debug_msg("Unknown: adding...")
+            logger.debug("Unknown item, adding to db.")
             self.query("INSERT INTO Products(Name, ProductTypeID, PCPP_URL) VALUES (?,?,?)",
                        (item["name"], self.get_catagorty_id(item["catagorty"]), item["pcpp url"]))
-            self.debug_msg("Added")
             return self.c.lastrowid
         return results[0][0]
 
@@ -229,16 +247,19 @@ class Handler(Tools):
         cat - the catagorty | sting
 
         """
-        self.debug_msg("GET PROD TYPE ID: {0}".format(cat))
+        logger = getLogger(__name__+".Handler.get_catagorty_id")
+        logger.debug("Call to get_catagorty_id, get id of catagorty {0}".format(cat))
         result = self.query("SELECT ProductTypeID FROM ProductTypes WHERE Description=?", (cat,))
-        self.debug_msg("RESULTS: {0}".format(result))
+        logger.debug("Result: {0}".format(result))
         if len(result) < 1:
+            logger.debug("Unkonwn catagorty, adding to db.")
             self.query("INSERT INTO ProductTypes(Description) VALUES (?)", (cat,))
             return self.c.lastrowid
         return result[0][0]
 
     def open(self):
         """Open a connection to a database."""
+        getLogger(__name__+".Handler.open").debug("Opening connection to db: {0}".format(self.path))
         self.db = sqlite3.connect(self.path)
         self.c = self.db.cursor()
         return None
@@ -249,6 +270,7 @@ class Handler(Tools):
         commit - Do a final commit? | boolean
 
         """
+        getLogger(__name__+".Handler.close").debug("Closing connection to db, with commmit: {0}".format(commit))
         if commit:
             self.db.commit()
         self.db.close()
@@ -264,7 +286,7 @@ class Handler(Tools):
         """
         if not sql.endswith(";"):
             sql += ";"
-        self.debug_msg("SELF.QUERY sql:\n{0}\nwith data: {1}".format(sql.strip(), data))
+        getLogger(__name__+".Handler.query").debug("Querying db with '{0}' and data: {1}".format(" ".join([p.strip() for p in sql.split()]), data))
         self.c.execute(sql, data)
         self.db.commit()
         return self.c.fetchall()
@@ -276,7 +298,7 @@ class Handler(Tools):
         key - property name | string
 
         """
-        self.debug_msg("property_get key: " + key)
+        getLogger(__name__+".Handler.property_get").debug("Get property: {0}".format(key))
         # Not sqli protected but it is app-side, may change in future.
         columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
         if not key in columns: # A bit of sqli protection as I could not get ? to work.
@@ -294,6 +316,7 @@ class Handler(Tools):
 
         """
         # Does not really need sqli protection as it is app only facing and I can't get ? to work here.
+        getLogger(__name__+".Handler.property_add").debug("property_add called with key {0}, value: {1}, constraint {2}".format(key, value, constraint))
         self.query("ALTER TABLE Properties ADD COLUMN {0} {1}".format(key, constraint))
         if value:
             self.property_set(key, value)
@@ -307,6 +330,7 @@ class Handler(Tools):
             / Not required but if given set.
 
         """
+        getLogger(__name__+".Handler.property_set").debug("Property set: key {0}, value {1}".format(key, value))
         columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
         if not key in columns: # A bit of sqli protection as I could not get ? to work.
             raise UnknownPropertyError("Unknown property: {0}".format(key))
@@ -314,16 +338,17 @@ class Handler(Tools):
         return None
 
     # Filter Methods - Need reworking
-    def filter_add(self, filter, name=None):
+    def filter_add(self, filter_, name=None):
         """Add a filter to the filter table.
 
-        filter - A list of filters, ['filter', 'oporand', value], and oporands | list
+        filter_ - A list of filters, ['filter', 'oporand', value], and oporands | list
                     / e.g [["OfferID", ">", 10], "AND", ["Normal_Price", "<", 100], "OR", ["Flames", "=", 3]]
                     / See do_filter() for more info on filters.
         name - Name of filter | string
 
         """
-        self.query("INSERT INTO Filters(Name, Filter, Date_Time) VALUES (?,?,?)", (name, json.dumps(filter), time()))
+        getLogger(__name__+".Handler.filter_add").debug("Add filter called. filter {0}, name {0}".format(filter_, name))
+        self.query("INSERT INTO Filters(Name, Filter, Date_Time) VALUES (?,?,?)", (name, json.dumps(filter_), time()))
         return None
 
     def filter_delete(self, ID):
@@ -332,6 +357,7 @@ class Handler(Tools):
         ID - Filter name or FilterID | int or string
 
         """
+        getLogger(__name__+".Handler.filter_delete").debug("Deleting filter {0}".format(ID))
         if isinstance(ID, int):
             self.query("DELETE FROM Filters WHERE FilterID=?", (ID,))
         elif isinstance(ID, str):
@@ -371,6 +397,7 @@ class Handler(Tools):
         Value: Is the value you want to filter by.
 
         """
+        logger = getLogger(__name__+".Handler.filter_do")
         if ID == ":CUSTOM:":
             pass
         elif isinstance(ID, int):
@@ -378,7 +405,9 @@ class Handler(Tools):
         elif isinstance(ID, str):
             filter_ = json.loads(self.query("SELECT Filter FROM Filters WHERE Name=?", (ID,))[0][0])
         else:
+            logging.debug("No filter can be found for ID: {0}".format(ID))
             return None
+        logger.debug("Running filter: id {0}, filter {1}".format(ID, filter_))
         args = ""
         values = []
         # My sh!tty atempt to protect againest sql injection but probably failed but this does not really need it. :)
@@ -456,7 +485,8 @@ class Handler(Tools):
         if args:
             args = " WHERE" + args
         sql = "SELECT OfferID FROM Offers JOIN Products ON Offers.ProductID = Products.ProductID" + args
-        return self.query(sql, values)
+        logger.debug("Args are: {0}".format(args))
+        return self.query(sql, values) # Needs to be corrected/reformated.
 
 
 class Updater(Handler, Thread_tools):
@@ -473,18 +503,24 @@ class Updater(Handler, Thread_tools):
         objects but be created inside the same thread... but i did it in
         run so???
         """
+        logger = getLogger(__name__+".Updater.__init__")
+        logger.debug("DB Updater initalization.")
         self.path = path
         countries = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us"]
         if country not in countries:
             raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)))
         self.country = country
         Thread_tools.__init__(self, *args, **kwargs)
+        logger.debug("Updater ready.")
+        return None
 
     def run(self):
         """Run the updater."""
+        logger = getLogger(__name__+".Updater.run")
+        logger.debug("DB Updater running.")
         self.open()
         self.first_setup()
-        data = Scraper(self.country, debug=self.debug)
+        data = scraper(self.country, debug=self.debug)
         actives = []
         for item in data:
             # Check if offer already in offers table.
@@ -508,7 +544,8 @@ class Updater(Handler, Thread_tools):
                     result[1] = item["flames"]
                 self.query("UPDATE Offers SET Updated=?, Flames=? WHERE OfferID=?", (item["time"], result[1], result[0]))
                 actives.append(result[0])
-        # Setup Offers not in lasest scrap to inactive.
+        logger.debug("Updated from website, now updating existing entries.")
+        # Setup Offers not in lasest scrape to inactive.
         results = self.query("SELECT OfferID FROM Offers WHERE Active=1")
         inactives = []
         for item in results:
@@ -517,7 +554,9 @@ class Updater(Handler, Thread_tools):
         self.c.executemany("UPDATE Offers SET Active=0 WHERE OfferID=?", inactives)
         self.db.commit()
         self.close() # Must
+        logger.debug("Complete updated")
         if "call_when_done" in self.kwargs:
+            logger.debug("Call back been executed.")
             self.kwargs["call_when_done"]()
         return None
 

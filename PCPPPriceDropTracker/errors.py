@@ -21,12 +21,15 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 class Error(Exception):
     """General Error class."""
 
-    def __init__(self, msg=None, *args):
+    def __init__(self, msg=None, *args, **kwargs):
         """Error Raising."""
         if not msg:
             msg = self.__doc__
+        getLogger(__name__).exception("Exception raised: {0}".format(msg))
         super().__init__(msg)
         self.msg = msg
+        self.args = args
+        self.kwargs = kwargs
 
 class UnknownSiteError(Error):
     """General unknown site error."""

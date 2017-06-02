@@ -19,7 +19,7 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 import tkinter as tk
 import tkinter.ttk as ttk
-from logging import getLogger as gl
+from logging import getLogger
 from .DBHandler import Handler
 from .tools import Tools
 from .customWidgets import Panel, MessageBox
@@ -37,7 +37,7 @@ class App(Panel):
         db_handler - Database handler object | object
 
         """
-        logger = gl(__name__+".App.__init__")
+        logger = getLogger(__name__+".App.__init__")
         logger.debug("App initalization.")
         if "db_handler" in kwargs:
             self.db_handler = kwargs["db_handler"]
@@ -98,7 +98,7 @@ class Title_Panel(Panel):
 
     def __init__(self, root, *args, **kwargs):
         """Initialization. Args as of Panel."""
-        logger = gl(__name__+".Title_Panel.__init__")
+        logger = getLogger(__name__+".Title_Panel.__init__")
         logger.debug("Title_Panel initalization.")
         super().__init__(root, *args, **kwargs)
         self.text = ttk.Label(self, text="PCPPScraper\nWriten by mtech0")
@@ -113,7 +113,7 @@ class Search_Box(Panel):
 
     def __init__(self, root, *args, **kwargs):
         """Initialization. Args as of Panel."""
-        logger = gl(__name__+".Search_Box.__init__")
+        logger = getLogger(__name__+".Search_Box.__init__")
         logger.debug("Search_Box initalization.")
         super().__init__(root, *args, **kwargs)
         self.search_text = tk.StringVar()
@@ -128,7 +128,7 @@ class Search_Box(Panel):
 
     def search(self, *args, **kwargs):
         """Search for offer in database and display results."""
-        logger = gl(__name__+".Search_Box.search")
+        logger = getLogger(__name__+".Search_Box.search")
         string = self.search_text.get()
         logger.debug("All to search with string: '%s'.", string)
         if not string or string == "":
@@ -148,7 +148,7 @@ class Search_Box(Panel):
 
     def external_open(self):
         """Search external open rapper method."""
-        gl(__name__+".Search_Box.external_open").debug("External open called.")
+        getLogger(__name__+".Search_Box.external_open").debug("External open called.")
         return self.search(external=True)
 
 
@@ -164,7 +164,7 @@ class Results_Panel(Panel):
             / root must be tk.Tk() for this as it also sets a title to root.
 
         """
-        logger = gl(__name__+".Results_Panel.__init__")
+        logger = getLogger(__name__+".Results_Panel.__init__")
         logger.debug("Results_Panel initalization.")
         data = None
         if "open_search_data" in kwargs:
@@ -201,12 +201,12 @@ class Results_Panel(Panel):
 
     def clear(self):
         """Clear the Treeview/results."""
-        gl(__name__+".Results_Panel.clear").debug("Clear panel")
+        getLogger(__name__+".Results_Panel.clear").debug("Clear panel")
         return self.tree.delete(*self.tree.get_children())
 
     def show_all_w_filters(self):
         """Show all <conditions -only active=1 at the moment> offers."""
-        gl(__name__+".Results_Panel.show_all_w_filters").debug("Showing all entries with filters applied to results panel.")
+        getLogger(__name__+".Results_Panel.show_all_w_filters").debug("Showing all entries with filters applied to results panel.")
         self.clear()
         results = self.root.db_handler.search(self.root.show_columns, self.root.search_filters.get(), None)
         return self.add(results)
@@ -217,7 +217,7 @@ class Results_Panel(Panel):
         ids - A list/tuple of OfferIDs | list/tuple
             / Can be [(id,), ...] as got from query.
         """
-        gl(__name__+".Results_Panel.add_by_id").debug("Adding entries by id.")
+        getLogger(__name__+".Results_Panel.add_by_id").debug("Adding entries by id.")
         if isinstance(ids[0], tuple):
             wasIds = ids
             ids = [id[0] for id in wasIds]
@@ -229,7 +229,7 @@ class Results_Panel(Panel):
 
         data - Results to add | [[col1, col2, ...], ...] or tuplised
         """
-        gl(__name__+".Results_Panel.add").debug("Adding results to Treeview")
+        getLogger(__name__+".Results_Panel.add").debug("Adding results to Treeview")
         for item in data:
             self.tree.insert('', "end", text=item[0], values=(item[1:]))
         return None
@@ -240,7 +240,7 @@ class Side_Options(Panel):
 
     def __init__(self, root, *args, **kwargs):
         """Initialization. Args as of Panel."""
-        logger = gl(__name__+".Side_Options.__init__")
+        logger = getLogger(__name__+".Side_Options.__init__")
         logger.debug("Side_Options initialization.")
         super().__init__(root, *args, **kwargs)
 
@@ -274,21 +274,21 @@ class Side_Options(Panel):
 
     def debug_change(self):
         """Change debug status and update GUI."""
-        logger = gl(__name__+".Side_Options.debug_change")
+        logger = getLogger(__name__+".Side_Options.debug_change")
         logger.debug("Debug change called.")
         logger.warning("Debug setting changing is not currently supported with the new logging system. This is to be add in a future update.")
         return None
 
     def log_change(self):
         """Change log status and update GUI."""
-        logger = gl(__name__+".Side_Options.log_change")
+        logger = getLogger(__name__+".Side_Options.log_change")
         logger.debug("Log change called.")
         logger.warning("Log setting changing is not currently supported with the new logging system. This is to be add in a future update.")
         return None
 
     def set_textvars(self):
         """Update GUI to match debug and log status."""
-        logger = gl(__name__+".Side_Options.set_textvars")
+        logger = getLogger(__name__+".Side_Options.set_textvars")
         logger.debug("Set textvariable called")
         logger.warning("Debug setting changing is not currently supported with the new logging system. This is to be add in a future update.")
         self.debug_button.state(['disabled'])
@@ -303,7 +303,7 @@ class Search_Filter_Panel(Panel):
 
     def __init__(self, root, *args, **kwargs):
         """Initialization. Args as of Panel."""
-        logger = gl(__name__+".Search_Filter_Panel.__init__")
+        logger = getLogger(__name__+".Search_Filter_Panel.__init__")
         logger.debug("Search_Filter_Panel initialization.")
         super().__init__(root, *args, **kwargs)
 
@@ -315,7 +315,7 @@ class Search_Filter_Panel(Panel):
 
     def get(self):
         """Get a formated filter string."""
-        logger = gl(__name__+".Search_Filter_Panel.get")
+        logger = getLogger(__name__+".Search_Filter_Panel.get")
         logger.debug("Search_Filter_Panel.get called, returning filters")
         logger.warning("Filters not supported yet, only Active = 1. To be added in future update.")
         return "Active = 1"
@@ -326,7 +326,7 @@ class Status_Bar(Panel):
 
     def __init__(self, root, *args, **kwargs):
         """Initialization. Args as of Panel."""
-        logger = gl(__name__+".Status_Bar.__init__")
+        logger = getLogger(__name__+".Status_Bar.__init__")
         logger.debug("Status_Bar initialization.")
         super().__init__(root, *args, **kwargs)
 
@@ -352,7 +352,7 @@ class Menu_Bar(Tools):
 
     def __init__(self, root, *args, **kwargs):
         """Initialization. Args as of Tools."""
-        logger = gl(__name__+".Menu_Bar.__init__")
+        logger = getLogger(__name__+".Menu_Bar.__init__")
         logger.debug("Menu_Bar initialization.")
         self.root = root
         Tools.__init__(self, *args, **kwargs)
@@ -381,7 +381,7 @@ class Update_Hanlder(Tools):
 
     def __init__(self, root):
         """Initialization."""
-        logger = gl(__name__+".Update_Hanlder.__init__")
+        logger = getLogger(__name__+".Update_Hanlder.__init__")
         logger.debug("Update_Hanlder initialization.")
         self.root = root
         self.create_popup()
@@ -390,7 +390,7 @@ class Update_Hanlder(Tools):
         return None
 
     def create_popup(self):
-        logger = gl(__name__+".Update_Hanlder.create_popup")
+        logger = getLogger(__name__+".Update_Hanlder.create_popup")
         logger.debug("Creating popup.")
         self.text = tk.StringVar()
         self.button = tk.StringVar()
@@ -399,12 +399,12 @@ class Update_Hanlder(Tools):
         self.msg_box = MessageBox(msg=self.text,
                                   buttons={"1":[self.button, "WITHDRAW"]},
                                   title="Updating",
-                                  icon=".\imgs\debug_icon.png")
+                                  icon=".\PCPPPriceDropTracker\imgs\info_icon.png")
         logger.debug("Popup created.")
         return None
 
     def popup_updater(self):
-        logger = gl(__name__+".Update_Hanlder.popup_updater")
+        logger = getLogger(__name__+".Update_Hanlder.popup_updater")
         logger.debug("popup_updater called")
         self.text.set("Updated local database")
         self.button.set("Close")
@@ -415,7 +415,7 @@ class Update_Hanlder(Tools):
         return None
 
     def update_and_close(self):
-        gl(__name__+".Update_Hanlder.update_and_close").debug("Close and update pressed.")
+        getLogger(__name__+".Update_Hanlder.update_and_close").debug("Close and update pressed.")
         self.msg_box.destroy()
         self.root.search_box.search()
         return None
@@ -427,7 +427,7 @@ def mp():
 
 def main():
     """Main."""
-    logger = gl(__name__+".main")
+    logger = getLogger(__name__+".main")
     logger.debug("Main called, calling and running App")
     app = App()
     app.mainloop()
@@ -437,7 +437,7 @@ def main():
 def run_as_main():
     import log_setup
     log_setup.setup()
-    gl(__name__).debug("Run as main.")
+    getLogger(__name__).debug("Run as main.")
     main()
 
 if __name__ == '__main__':

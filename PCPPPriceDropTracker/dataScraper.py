@@ -20,16 +20,19 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 from bs4 import BeautifulSoup
 import requests
 from time import time
+from logging import getLogger
 from .errors import UnknownCountryError
 from .tools import main
 
 
-def Scraper(country="uk", *args, **kwargs):
+def scraper(country="uk", *args, **kwargs):
     """The data scraper and parser.
 
     country - A country code supported by PCPP | string
 
     """
+    logger = getLogger(__name__+".Scraper")
+    logger.debug("Data Scraper initalized.")
     if country not in ["au", "be", "ca", "de", "es", "fr",
                        "in", "it", "nz", "uk", "us"]:
         raise UnknownCountryError("PCPP does not support {0}. :\\".format(country))
@@ -40,7 +43,9 @@ def Scraper(country="uk", *args, **kwargs):
     secton_header = soup.find("tr")
     try:
         catagorties = soup.find(class_="left-column").find("ul").get_text().strip().split("\n")
+        logger.debug("Catagorties found: {0}".format(catagorties))
     except AttributeError:
+        logger.debug("No entries found.")
         return None
     catagorty = -1
     for item in soup.find_all("tr"):
@@ -61,7 +66,9 @@ def Scraper(country="uk", *args, **kwargs):
                       "currency symbol": data[3].get_text()[0],
                       "time": dl_time
                       })
+    logger.debug("Data scrape complete.")
     return items
+
 
 if __name__ == '__main__':
     main(__doc__)
