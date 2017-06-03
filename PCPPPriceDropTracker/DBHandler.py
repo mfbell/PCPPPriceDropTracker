@@ -49,14 +49,14 @@ class Handler(Tools):
         self.open()
         self.first_setup()
         logger.debug("Database handler setup complete.")
-        return None
+        return
 
     # DB Tools or Handling Tools
     def updater(self, call_when_done=None):
         """Rapper method for Updater."""
         getLogger(__name__+".Handler.updater").debug("Updater rapper called.")
         updater = Updater(country=self.country, path=self.path, debug=self.debug, call_when_done=call_when_done, run=True)
-        return None
+        return
 
     def search(self, columns="*", filters=None, search_string=None, filter_data=None):
         """Search for offer in database and return results.
@@ -210,7 +210,7 @@ class Handler(Tools):
                                                      Primary Key(ID));""")
         self.query("""INSERT OR IGNORE INTO Properties(ID) VALUES(1);""")
         logger.debug("first_setup successful.")
-        return None
+        return
 
     def clean_up(self, displayed=False):
         """Remove all inactive (and displayed) offers
@@ -222,7 +222,7 @@ class Handler(Tools):
         self.query("DELETE FROM Offers WHERE Active=0")
         if displayed:
             self.query("DELETE FROM Offers WHERE Displayed=1")
-        return None
+        return
 
     def get_product_id(self, item):
         """Get a products id from scraped offer data.
@@ -262,7 +262,7 @@ class Handler(Tools):
         getLogger(__name__+".Handler.open").debug("Opening connection to db: {0}".format(self.path))
         self.db = sqlite3.connect(self.path)
         self.c = self.db.cursor()
-        return None
+        return
 
     def close(self, commit=True):
         """Close the connection to the database.
@@ -274,7 +274,7 @@ class Handler(Tools):
         if commit:
             self.db.commit()
         self.db.close()
-        return None
+        return
 
     def query(self, sql, data=()):
         """Send a query to the database.
@@ -320,7 +320,7 @@ class Handler(Tools):
         self.query("ALTER TABLE Properties ADD COLUMN {0} {1}".format(key, constraint))
         if value:
             self.property_set(key, value)
-        return None
+        return
 
     def property_set(self, key, value):
         """Set property in database Properties table.
@@ -335,7 +335,7 @@ class Handler(Tools):
         if not key in columns: # A bit of sqli protection as I could not get ? to work.
             raise UnknownPropertyError("Unknown property: {0}".format(key))
         self.query("UPDATE Properties SET {0} = ? WHERE ID=1".format(key), (value,))
-        return None
+        return
 
     # Filter Methods - Need reworking
     def filter_add(self, filter_, name=None):
@@ -349,7 +349,7 @@ class Handler(Tools):
         """
         getLogger(__name__+".Handler.filter_add").debug("Add filter called. filter {0}, name {0}".format(filter_, name))
         self.query("INSERT INTO Filters(Name, Filter, Date_Time) VALUES (?,?,?)", (name, json.dumps(filter_), time()))
-        return None
+        return
 
     def filter_delete(self, ID):
         """Delete a filter.
@@ -362,7 +362,7 @@ class Handler(Tools):
             self.query("DELETE FROM Filters WHERE FilterID=?", (ID,))
         elif isinstance(ID, str):
             self.query("DELETE FROM Filters WHERE Name=?", (ID,))
-        return None
+        return
 
     def filter_do(self, ID, filter_=None):
         """Get OfferIDs from a filter. - Needs rewriting...
@@ -512,7 +512,7 @@ class Updater(Handler, Thread_tools):
         self.country = country
         Thread_tools.__init__(self, *args, **kwargs)
         logger.debug("Updater ready.")
-        return None
+        return
 
     def run(self):
         """Run the updater."""
@@ -558,7 +558,7 @@ class Updater(Handler, Thread_tools):
         if "call_when_done" in self.kwargs:
             logger.debug("Call back been executed.")
             self.kwargs["call_when_done"]()
-        return None
+        return
 
 
 if __name__ == '__main__':
