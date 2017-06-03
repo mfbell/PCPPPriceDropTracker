@@ -10,4 +10,3 @@
 * Functional menu bars
 * New title zone/logo thing
 * Saved settings
-* logging system
