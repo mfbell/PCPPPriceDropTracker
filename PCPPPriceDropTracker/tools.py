@@ -21,6 +21,7 @@ from time import time
 import os
 from threading import Thread
 from logging import getLogger
+import subprocess
 
 def main(doc=None, itu=None, pause=True, xit=True):
     """Module run as main function.
@@ -55,6 +56,7 @@ def main(doc=None, itu=None, pause=True, xit=True):
         exit(0)
     elif pause:
         input("Press Enter to continue...")
+    return
 
 def sys_args(*check):
     """System Arg Handler Function.
@@ -97,6 +99,20 @@ def get_number_in_range(number, min_=None, max_=None):
     else:
         return max([min_, min([max_, number])])
 
+def get_git_commit_hash(version="long"):
+    """Get git commit hash
+
+    version - either long or short | string
+        / Defaults to long
+
+    """
+    if version == "long":
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().replace("\n", "")
+    elif version == "short":
+        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().replace("\n", "")
+    else:
+        raise ValueError("Invalid arg for version.")
+
 class Tools():
     """General Class Tools."""
 
@@ -107,12 +123,7 @@ class Tools():
             del(kwargs["debug"]) # Cleaning, to be removed when codes in updated
         self.args = args
         self.kwargs = kwargs
-
-    def debug(self, *args, **kwargs): # Removed when other code cleaned
-        pass
-
-    def debug_msg(self, *args, **kwargs): # Removed when other code cleaned
-        pass
+        return
 
 
 class Thread_tools(Tools, Thread):
@@ -124,6 +135,7 @@ class Thread_tools(Tools, Thread):
         Thread.__init__(self)
         Tools.__init__(self, *args, **kwargs)
         self.autorun()
+        return
 
     def autorun(self):
         """Autorun thread if kwargs["run"] is True."""
@@ -132,6 +144,7 @@ class Thread_tools(Tools, Thread):
         if "run" in self.kwargs and self.kwargs["run"]:
             logger.debug("Autorunning.")
             self.start()
+        return
 
 
 if __name__ == '__main__':
