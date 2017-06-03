@@ -1,6 +1,6 @@
 """Custom Widgets.
 
-This module does not contain PCPPPriceDropTracker specific widgets and can be
+This module contains widgets made for PCPPPriceDropTracker but can be
 used universally.
 
 All widgets use the grid manager.
