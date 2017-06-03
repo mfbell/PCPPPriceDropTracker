@@ -65,7 +65,12 @@ class App(Panel):
         self.title_zone = Title_Panel(self)
         self.right_bar = ttk.Separator(self, orient="vertical")
         self.search_box = Search_Box(self)
-        self.search_filters = Search_Filter_Panel(self, max_height=self.get_main_row_height)
+        self.search_filters = Search_Filter_Panel(self,
+                                                  max_height=self.get_main_row_height,
+                                                  min_height=self.get_main_row_height,
+                                                  #min_width=lambda: 600,
+                                                  max_width=lambda: 200
+                                                  )
         self.results_panel = Results_Panel(self, borderwidth=2, relief="sunken")
 
         self.results_panel.grid(column=8, row=2, sticky="new")
@@ -76,28 +81,28 @@ class App(Panel):
         # Packing
         self.title_zone.grid(column=8, row=0)
         self.right_bar.grid(column=9, row=2, rowspan=3, sticky="ns", padx=(6), pady=(3))
-        self.side_options.grid(column=10, row=2, rowspan=3, sticky="nswe")
+        self.side_options.grid(column=10, row=2, rowspan=3, sticky="nwe")
         self.search_box.grid(column=8, row=1, pady=(9,3))
-        self.search_filters.grid(column=6, row=2, sticky="nwe")
+        self.search_filters.grid(column=6, row=2, sticky="nwse")
         #self.status_bar.grid(column=0, row=99, columnspan=32, sticky="s")
         #self.left_bar.grid(column=7, row=2, sticky="ns", padx=(6), pady=(3))
         logger.debug("App setup complete.")
         logger.info("PCPPPriceDropTracker GUI is running")
-        return None
+        return
 
     def add_filter(self):
         print("add filter would go here.")
-        return None
+        return
 
     def run_filters(self):
         print("run filters would go here.")
-        return None
+        return
 
     def get_main_row_height(self):
         a = self.results_panel.winfo_height()
         getLogger(__name__+".App.get_main_row_height").debug("Height is "+str(a))
-        if a is 1:
-            return 2
+        if a is 0:
+            return 32
         else:
             return a
 
@@ -114,7 +119,7 @@ class Title_Panel(Panel):
         # Packing
         self.text.grid(row=0)
         logger.debug("Title_Panel setup complete.")
-        return None
+        return
 
 
 class Search_Box(Panel):
@@ -133,7 +138,7 @@ class Search_Box(Panel):
         self.search_box.grid(column=0, row=0)
         self.search_button.grid(column=1, row=0)
         logger.debug("Search_Box setup complete.")
-        return None
+        return
 
     def search(self, *args, **kwargs):
         """Search for offer in database and display results."""
@@ -146,11 +151,11 @@ class Search_Box(Panel):
         results = self.root.db_handler.search(self.root.show_columns, self.root.search_filters.get(), string)
         if not results:
             logger.debug("No result from search query.")
-            return None
+            return
         elif "external" in kwargs and kwargs["external"]:
             logger.debug("Search results been opened external.")
             Results_Panel(tk.Tk(), open_search_data=[self.root.show_columns, self.search_text.get(), results])
-            return None
+            return
         self.root.results_panel.clear()
         logger.debug("Search results sent to be added to results panel.")
         return self.root.results_panel.add(results)
@@ -206,7 +211,7 @@ class Results_Panel(Panel):
         else:
             self.show_all_w_filters() # Remember this is done on first creation.
         logger.debug("Results_Panel setup complete.")
-        return None
+        return
 
     def clear(self):
         """Clear the Treeview/results."""
@@ -241,7 +246,7 @@ class Results_Panel(Panel):
         getLogger(__name__+".Results_Panel.add").debug("Adding results to Treeview")
         for item in data:
             self.tree.insert('', "end", text=item[0], values=(item[1:]))
-        return None
+        return
 
 
 class Side_Options(Panel):
@@ -279,21 +284,21 @@ class Side_Options(Panel):
         self.clear.grid(row=98, pady=(3,0))
         self.exit.grid(row=99, pady=(3,0), sticky="s")
         logger.debug("Side_Options setup complete.")
-        return None
+        return
 
     def debug_change(self):
         """Change debug status and update GUI."""
         logger = getLogger(__name__+".Side_Options.debug_change")
         logger.debug("Debug change called.")
         logger.warning("Debug setting changing is not currently supported with the new logging system. This is to be add in a future update.")
-        return None
+        return
 
     def log_change(self):
         """Change log status and update GUI."""
         logger = getLogger(__name__+".Side_Options.log_change")
         logger.debug("Log change called.")
         logger.warning("Log setting changing is not currently supported with the new logging system. This is to be add in a future update.")
-        return None
+        return
 
     def set_textvars(self):
         """Update GUI to match debug and log status."""
@@ -304,7 +309,7 @@ class Side_Options(Panel):
         self.log_button.state(['disabled'])
         self.debug_status.set("Debug")
         self.log_status.set("Log")
-        return None
+        return
 
 
 class Search_Filter_Panel(ScrollablePanel):
@@ -316,17 +321,17 @@ class Search_Filter_Panel(ScrollablePanel):
         logger.debug("Search_Filter_Panel initialization.")
         super().__init__(root, *args, **kwargs)
         # Build filters here:
-        self.scrollwindow.text1 = ttk.Label(self.scrollwindow, text="This will be where filters will go\n...\n..\n.")
+        win = self.scrollwindow
+        win.title = ttk.Label(win, text="Filters....")
 
-        self.scrollwindow.text1.grid(column=0, row=0, sticky="w")
+        win.title.grid(column=0, row=0)
 
-        self.scrollwindow.text = ttk.Label(self.scrollwindow, text="\n".join([str(a)*20 for a in range(100)]))
-        self.scrollwindow.text.grid(row=1, column=0)
-        self.scrollwindow.button = ttk.Button(self.scrollwindow, text="My Button")
-        self.scrollwindow.button.grid(row=1, column=1, sticky="n")
+        if 0:
+            win.mytext = ttk.Label(win, text="\n".join([str(a)*20 for a in range(100)]))
+            win.mytext.grid(column=0, row=1)
 
         logger.debug("Search_Filter_Panel setup complete.")
-        return None
+        return
 
     def get(self):
         """Get a formated filter string."""
@@ -359,7 +364,7 @@ class Status_Bar(Panel):
         self.bar1.grid(column=9, row=96, sticky="ns")
         self.country.grid(column=10, row=96, sticky="e")
         logger.debug("Status_Bar setup complete.")
-        return None
+        return
 
 
 class Menu_Bar(Tools):
@@ -388,7 +393,7 @@ class Menu_Bar(Tools):
         self.menu.add_cascade(menu=self.edit_menu, label='Edit')
         self.menu.add_command(label="Update", command=lambda: Update_Hanlder(self.root))
         logger.debug("Menu_Bar setup complete.")
-        return None
+        return
 
 
 class Update_Hanlder(Tools):
@@ -402,7 +407,7 @@ class Update_Hanlder(Tools):
         self.create_popup()
         self.root.db_handler.updater(self.popup_updater)
         logger.debug("Update_Hanlder setup complete")
-        return None
+        return
 
     def create_popup(self):
         logger = getLogger(__name__+".Update_Hanlder.create_popup")
@@ -416,7 +421,7 @@ class Update_Hanlder(Tools):
                                   title="Updating",
                                   icon=".\PCPPPriceDropTracker\imgs\info_icon.png")
         logger.debug("Popup created.")
-        return None
+        return
 
     def popup_updater(self):
         logger = getLogger(__name__+".Update_Hanlder.popup_updater")
@@ -427,13 +432,13 @@ class Update_Hanlder(Tools):
         self.msg_box.deiconify()
         self.msg_box.grab_set()
         logger.debug("Popup updated")
-        return None
+        return
 
     def update_and_close(self):
         getLogger(__name__+".Update_Hanlder.update_and_close").debug("Close and update pressed.")
         self.msg_box.destroy()
         self.root.search_box.search()
-        return None
+        return
 
 
 def mp():
@@ -447,7 +452,7 @@ def main():
     app = App()
     app.mainloop()
     logger.debug("App closed.")
-    return None
+    return
 
 def run_as_main():
     import log_setup
