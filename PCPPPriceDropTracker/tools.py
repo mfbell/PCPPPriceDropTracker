@@ -20,7 +20,7 @@ __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 from time import time
 import os
 from threading import Thread
-from logging import getLogger as gl
+from logging import getLogger
 
 def main(doc=None, itu=None, pause=True, xit=True):
     """Module run as main function.
@@ -74,12 +74,35 @@ def sys_args(*check):
         if len(re) == 1: re = re[0]
         return re
 
+def get_number_in_range(number, min_=None, max_=None):
+    """If number is outside the range of min/max, the min/max it exceeds is
+    returned, if not the number is returned.
+
+    number - The middle number | integer
+    min_ - Minimum possible number | integer
+        / If not given, no minimum is set.
+    max_ - Maximum possible number | integer
+        / If not given, no maximum is set.
+
+    """
+    logger = getLogger(__name__+".get_number_in_range")
+    logger.debug("Call to get_number_in_range.")
+    logger.debug("Args given: {0}, {1}, {2}".format(number, min_, max_))
+    if min_ is None and max_ is None:
+        raise TypeError("get_number_in_range expected 2 arguments, got 1")
+    elif min_ is not None and max_ is None:
+        return max([min_, number])
+    elif max_ is not None and min_ is None:
+        return min([max_, number])
+    else:
+        return max([min_, min([max_, number])])
+
 class Tools():
     """General Class Tools."""
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
-        gl(__name__+".Tools.__init__").debug("Tools Class called")
+        getLogger(__name__+".Tools.__init__").debug("Tools Class called")
         if "debug" in kwargs:
             del(kwargs["debug"]) # Cleaning, to be removed when codes in updated
         self.args = args
@@ -91,19 +114,20 @@ class Tools():
     def debug_msg(self, *args, **kwargs): # Removed when other code cleaned
         pass
 
+
 class Thread_tools(Tools, Thread):
     """Threading Class Tools."""
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
-        gl(__name__+".Thread_tools.__init__").debug("Thread_tools Class called.")
+        getLogger(__name__+".Thread_tools.__init__").debug("Thread_tools Class called.")
         Thread.__init__(self)
         Tools.__init__(self, *args, **kwargs)
         self.autorun()
 
     def autorun(self):
         """Autorun thread if kwargs["run"] is True."""
-        logger = gl(__name__+".Tools.autorun")
+        logger = getLogger(__name__+".Tools.autorun")
         logger.debug("Autorun called.")
         if "run" in self.kwargs and self.kwargs["run"]:
             logger.debug("Autorunning.")
