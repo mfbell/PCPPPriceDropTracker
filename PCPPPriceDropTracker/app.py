@@ -22,7 +22,7 @@ import tkinter.ttk as ttk
 from logging import getLogger
 from .DBHandler import Handler
 from .tools import Tools
-from .customWidgets import Panel, MessageBox
+from .customWidgets import Panel, MessageBox, ScrollablePanel
 
 
 
@@ -56,29 +56,30 @@ class App(Panel):
         self.root.option_add('*tearOff', False)
             # ColName:[DisplayName, width (-1=Default)]
         self.show_columns = {"Name":["Name", 450],
-                             "Normal_Price":["Normal Price", -1],
-                             "Offer_Price":["Offer Price", -1],
+                             "Normal_Price":["Normal Price", 100],
+                             "Offer_Price":["Offer Price", 100],
                              "Flames": ["Flames", 75],
                              "Active": ["Active", 100]
                              }
         # Content
         self.title_zone = Title_Panel(self)
-        self.search_filters = Search_Filter_Panel(self)
         self.right_bar = ttk.Separator(self, orient="vertical")
         self.search_box = Search_Box(self)
+        self.search_filters = Search_Filter_Panel(self, max_height=self.get_main_row_height)
         self.results_panel = Results_Panel(self, borderwidth=2, relief="sunken")
-        self.status_bar = Status_Bar(self)
+
+        self.results_panel.grid(column=8, row=2, sticky="new")
+        #self.status_bar = Status_Bar(self)
         self.menu_bar = Menu_Bar(self)
         self.side_options = Side_Options(self)
         #self.left_bar = ttk.Separator(self, orient="vertical")
         # Packing
         self.title_zone.grid(column=8, row=0)
         self.right_bar.grid(column=9, row=2, rowspan=3, sticky="ns", padx=(6), pady=(3))
-        self.side_options.grid(column=10, row=2, rowspan=3, sticky="n")
+        self.side_options.grid(column=10, row=2, rowspan=3, sticky="nswe")
         self.search_box.grid(column=8, row=1, pady=(9,3))
-        self.results_panel.grid(column=8, row=2)
-        self.search_filters.grid(column=6, row=2, sticky="n", padx=(0,6), pady=(3))
-        self.status_bar.grid(column=0, row=99, columnspan=32, sticky="s")
+        self.search_filters.grid(column=6, row=2, sticky="nwe")
+        #self.status_bar.grid(column=0, row=99, columnspan=32, sticky="s")
         #self.left_bar.grid(column=7, row=2, sticky="ns", padx=(6), pady=(3))
         logger.debug("App setup complete.")
         logger.info("PCPPPriceDropTracker GUI is running")
@@ -91,6 +92,14 @@ class App(Panel):
     def run_filters(self):
         print("run filters would go here.")
         return None
+
+    def get_main_row_height(self):
+        a = self.results_panel.winfo_height()
+        getLogger(__name__+".App.get_main_row_height").debug("Height is "+str(a))
+        if a is 1:
+            return 2
+        else:
+            return a
 
 
 class Title_Panel(Panel):
@@ -174,7 +183,7 @@ class Results_Panel(Panel):
         super().__init__(root, *args, **kwargs)
         if data is None:
             self.columns = self.root.show_columns
-        self.tree = ttk.Treeview(self, column=([col for col in self.columns][1:]), height=25)
+        self.tree = ttk.Treeview(self, column=([col for col in self.columns][1:]), height=20)
         first = True
         for col in self.columns:
             if first:
@@ -298,7 +307,7 @@ class Side_Options(Panel):
         return None
 
 
-class Search_Filter_Panel(Panel):
+class Search_Filter_Panel(ScrollablePanel):
     """Search Filter Panel and elements."""
 
     def __init__(self, root, *args, **kwargs):
@@ -306,10 +315,16 @@ class Search_Filter_Panel(Panel):
         logger = getLogger(__name__+".Search_Filter_Panel.__init__")
         logger.debug("Search_Filter_Panel initialization.")
         super().__init__(root, *args, **kwargs)
+        # Build filters here:
+        self.scrollwindow.text1 = ttk.Label(self.scrollwindow, text="This will be where filters will go\n...\n..\n.")
 
-        self.text = ttk.Label(self, text="Search Filters\nwill go here")
-        # Packing
-        self.text.grid(column=0, row=0)
+        self.scrollwindow.text1.grid(column=0, row=0, sticky="w")
+
+        self.scrollwindow.text = ttk.Label(self.scrollwindow, text="\n".join([str(a)*20 for a in range(100)]))
+        self.scrollwindow.text.grid(row=1, column=0)
+        self.scrollwindow.button = ttk.Button(self.scrollwindow, text="My Button")
+        self.scrollwindow.button.grid(row=1, column=1, sticky="n")
+
         logger.debug("Search_Filter_Panel setup complete.")
         return None
 
