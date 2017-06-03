@@ -1,7 +1,6 @@
 """Custom Widgets.
 
-This module contains widgets made for PCPPPriceDropTracker but can be
-used universally.
+Custom widgets writen for PCPPPriceDropTracker.
 
 All widgets use the grid manager.
 
@@ -69,7 +68,6 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
         title - The title for the windows | string
             / Default to "Message"
         icon - Path of an icon | string
-            / NOTE: To be added
         buttons - A list of "button data" | dictionary
             / {"id": ["Button text" or tk Vars, Function to call when pressed], ...}
             / Other button setting can be set though <self>.buttons[id]
@@ -100,7 +98,7 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
         if "icon" in kwargs:
             icon_path = kwargs["icon"]
         else:
-            icon_path = ".\PCPPPriceDropTracker\imgs\info_icon.png"
+            icon_path = None
         logger.debug("Icon path: {0}".format(icon_path))
         if "buttons" in kwargs:
             buttons = kwargs["buttons"]
@@ -128,12 +126,14 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
             m.grid(column=4, row=c, padx=3)
             c += 1
         # icon
-        try:
-            self.icon_image = ImageTk.PhotoImage(Image.open(icon_path).resize((48, 48), Image.ANTIALIAS))
-            self.icon = ttk.Label(self.main, image=self.icon_image)
+        if icon_path:
+            try:
+                self.icon_image = ImageTk.PhotoImage(Image.open(icon_path).resize((48, 48), Image.ANTIALIAS))
+                self.icon = ttk.Label(self.main, image=self.icon_image)    
+            except FileNotFoundError:
+                self.icon = ttk.Label(self.main, text="Failed to\nLoad Icon")
+                logger.exception("FileNotFoundError while adding icon.")
             self.icon.grid(column=2, row=4, rowspan=c-4, pady=6, padx=6)
-        except FileNotFoundError:
-            logger.exception("FileNotFoundError while adding icon.")
 
         # Splitter
         self.bar = ttk.Separator(self.main, orient="horizontal")
