@@ -3,6 +3,8 @@
 This module does not contain PCPPPriceDropTracker specific widgets and can be
 used universally.
 
+All widgets use the grid manager.
+
 Written by {0}
 Version {1}
 Status: {2}
@@ -33,6 +35,16 @@ except ImportError as e:
         raise e
 
 
+class _Limitation():
+    """Some methods to inherit to limit functions/explain error."""
+
+    def pack(self, *a, **kw):
+        raise tk.TclError("Cannot use pack with this widget.")
+
+    def place(self, *a, **kw):
+        raise tk.TclError("Cannot use place with this widget.")
+
+
 class Panel(ttk.Frame, Tools):
     """"Parent panel class."""
 
@@ -42,10 +54,10 @@ class Panel(ttk.Frame, Tools):
         self.root = root
         Tools.__init__(self, *args, **kwargs)
         ttk.Frame.__init__(self, self.root, *self.args, **self.kwargs)
-        return None
+        return
 
 
-class MessageBox(tk.Toplevel, Tools):
+class MessageBox(tk.Toplevel, Tools, _Limitation):
     """Custom message box."""
 
     def __init__(self, *args, **kwargs):
@@ -149,16 +161,14 @@ class MessageBox(tk.Toplevel, Tools):
         if "grab" in kwargs and kwargs["grab"]:
             self.grab_set()
         logger.debug("MessageBox setup.")
-        return None
+        return
 
 
-class ScrollablePanel(Panel):
+class ScrollablePanel(Panel, _Limitation):
     """Custom scrolling frame widget.
 
     With auto resizing, max sizes, min sizes, scroll wheel auto (un)binding for
     x and y and more.
-    Based off code writen by Mikhail T.
-    https://stackoverflow.com/a/37861801/5990054
 
     """
 
@@ -167,39 +177,52 @@ class ScrollablePanel(Panel):
 
         Args as of Panel. Plus:
         kwargs:
-        max_width - Max widget width, excluding Y Scrollbar | function
-        max_height - Max widget height, including X Scrollbar | function
-        min_width - Min widget width, excluding Y Scrollbar | function
-        min_height - Min widget height, excluding Y Scrollbar | function
+        max_width - Max widget width, including Y Scrollbar
+        max_height - Max widget height, including X Scrollbar
+        min_width - Min widget width, including Y Scrollbar
+        min_height - Min widget height, including Y Scrollbar
+            / Either can be a function which is called every time it is needed
+            / Thus been able to update easer than changing a variable in this
+            / object. Or integer, or None which it defaults to, which means not
+            / set/does not matter.
+        The minumun size is 32 by 32 or I could not get it working, and it
+        looped desiding if to hide or show the scrollbars. :\
+        If it is lower than 32, 32 will be used.
+        I did get it working vertical at 20 but idk.
 
         """
         logger = getLogger(__name__+".ScrollablePanel.__init__")
         logger.debug("ScrollablePanel called.")
-        self.sizes = {}
+        self._sizes = {}
         if "max_width" in kwargs:
-            self.sizes["max_width"] = kwargs["max_width"]
+            self._sizes["max_width"] = kwargs["max_width"]
             del(kwargs["max_width"])
         else:
-            self.sizes["max_width"] = None
+            self._sizes["max_width"] = None
         if "max_height" in kwargs:
-            self.sizes["max_height"] = kwargs["max_height"]
+            self._sizes["max_height"] = kwargs["max_height"]
             del(kwargs["max_height"])
         else:
-            self.sizes["max_height"] = None
+            self._sizes["max_height"] = None
         if "min_width" in kwargs:
-            self.sizes["min_width"] = kwargs["min_width"]
+            self._sizes["min_width"] = kwargs["min_width"]
             del(kwargs["min_width"])
         else:
-            self.sizes["min_width"] = None
+            self._sizes["min_width"] = None
         if "min_height" in kwargs:
-            self.sizes["min_height"] = kwargs["min_height"]
+            self._sizes["min_height"] = kwargs["min_height"]
             del(kwargs["min_height"])
         else:
-            self.sizes["min_height"] = None
+            self._sizes["min_height"] = None
+        if "auto_hide_scrollbars" in kwargs:
+            self.auto_hide_scrollbars = kwargs["auto_hide_scrollbars"] if kwargs["max_width"] >= 32 else 32
+            del(kwargs["auto_hide_scrollbars"])
+        else:
+            self.auto_hide_scrollbars = True
         super().__init__(root, *args, **kwargs)
 
-        self.xscrlbr = ttk.Scrollbar(self, orient="horizontal")
-        self.yscrlbr = ttk.Scrollbar(self, orient="vertical")
+        self.xscrlbr = AutoScrollbar(self, orient="horizontal", name="ybar")
+        self.yscrlbr = AutoScrollbar(self, orient="vertical", name="xbar")
         self.canvas = tk.Canvas(self)
         self.canvas.config(relief="flat", width=20, heigh=20, bd=2)
         self.xscrlbr.config(command=self.canvas.xview)
@@ -209,12 +232,16 @@ class ScrollablePanel(Panel):
         self.canvas.config(xscrollcommand = self.xscrlbr.set,
                          yscrollcommand = self.yscrlbr.set,
                          scrollregion = (0, 0, 10, 10))
-        self.xscrlbr.grid(column=0, row=1, sticky="ew", columnspan=2)
+        self.xscrlbr.grid(column=0, row=1, sticky="ew") #, columnspan=2)
         self.yscrlbr.grid(column=1, row=0, sticky="ns")
-        self.canvas.grid(column=0, row=0)
+        self.canvas.grid(column=0, row=0, sticky="nswe")
         self.yscrlbr.lift(self.scrollwindow)
         self.xscrlbr.lift(self.scrollwindow)
 
+        # I would bind self to y scroll but it makes tranfer between y and x
+        # complex to a level which I will not use in my project.
+        # Only useful when you make self bigger than contence in
+        # scrollwindow, to cover unused frame space.
         self.scrollwindow.bind("<Configure>", self._configure_window)
         self.scrollwindow.bind("<Enter>", self._bound_to_mousewheel_y)
         self.scrollwindow.bind("<Leave>", self._unbound_to_mousewheel)
@@ -223,31 +250,34 @@ class ScrollablePanel(Panel):
         self.yscrlbr.bind("<Enter>", self._bound_to_mousewheel_y)
         self.yscrlbr.bind("<Leave>", self._unbound_to_mousewheel)
         logger.debug("ScrollablePanel setup complete.")
-        return None
+        return
+
+    def update(self):
+        self._configure_window(None)
 
     def _bound_to_mousewheel_x(self, event):
-        """Mouse bind."""
-        #getLogger(__name__+".ScrollablePanel._bound_to_mousewheel").debug("Binding mouse wheel scroll to ybar.")
+        """Mouse bind x."""
+        getLogger(__name__+".ScrollablePanel._bound_to_mousewheel_x").debug("Binding mouse wheel scroll to ybar.")
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_x)
 
     def _bound_to_mousewheel_y(self, event):
-        """Mouse bind."""
-        #getLogger(__name__+".ScrollablePanel._bound_to_mousewheel").debug("Binding mouse wheel scroll to ybar.")
+        """Mouse bind y."""
+        getLogger(__name__+".ScrollablePanel._bound_to_mousewheel_y").debug("Binding mouse wheel scroll to ybar.")
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_y)
 
     def _unbound_to_mousewheel(self, event):
         """Mouse unbind."""
-        #getLogger(__name__+".ScrollablePanel._unbound_to_mousewheel").debug("Unbinding mouse wheel scroll to ybar.")
+        getLogger(__name__+".ScrollablePanel._unbound_to_mousewheel").debug("Unbinding mouse wheel scroll to ybar.")
         self.canvas.unbind_all("<MouseWheel>")
 
     def _on_mousewheel_y(self, event):
-        """Mouse scroll."""
-        #getLogger(__name__+".ScrollablePanel._on_mousewheel").debug("MouseWheel scroll")
+        """Mouse scroll y."""
+        getLogger(__name__+".ScrollablePanel._on_mousewheel_y").debug("MouseWheel scroll")
         self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
     def _on_mousewheel_x(self, event):
-        """Mouse scroll."""
-        #getLogger(__name__+".ScrollablePanel._on_mousewheel").debug("MouseWheel scroll")
+        """Mouse scroll x."""
+        getLogger(__name__+".ScrollablePanel._on_mousewheel_x").debug("MouseWheel scroll")
         self.canvas.xview_scroll(int(-1*(event.delta/120)), "units")
 
     def _configure_window(self, event):
@@ -256,14 +286,14 @@ class ScrollablePanel(Panel):
         logger.debug("Update widgets.")
         size = (self.scrollwindow.winfo_reqwidth(), self.scrollwindow.winfo_reqheight())
         logger.debug("Current size %s", size)
-        self.canvas.config(scrollregion="0 0 {0} {1}".format(*size))
+        self.canvas.config(scrollregion=self.canvas.bbox("all"))
         if self.scrollwindow.winfo_reqwidth() != self.canvas.winfo_width():
             # update the canvas"s width to fit the inner frame
             self.canvas.config(width=self._size_cal("width"))
         if self.scrollwindow.winfo_reqheight() != self.canvas.winfo_height():
             # update the canvas"s width to fit the inner
             self.canvas.config(height=self._size_cal("height"))
-        return
+
 
     def _size_cal(self, dimension, *args, **kwargs):
         """Return size for canvas config.
@@ -273,16 +303,16 @@ class ScrollablePanel(Panel):
         """
         logger = getLogger(__name__+".ScrollablePanel._size_cal")
         logger.debug("Size calculator called.")
-        logger.debug("Values given: max_width {max_width}, max_heighth {max_height}, min_width {min_width}, min_height {min_height}".format(**self.sizes))
+        logger.debug("Values given: max_width {max_width}, max_heighth {max_height}, min_width {min_width}, min_height {min_height}".format(**self.sizes()))
         needed, scrollbar = self._get_dimensions(dimension)
-        if self.sizes["min_" + dimension] is None and self.sizes["max_" + dimension] is None:
+        if self.sizes("min_" + dimension) is None and self.sizes("max_" + dimension) is None:
             return needed # No need to remove scrollbar space as there is no set size.
-        elif self.sizes["min_" + dimension] is None and self.sizes["max_" + dimension]:
-            return get_number_in_range(needed, max_=self.sizes["max_" + dimension]() - scrollbar)
-        elif self.sizes["max_" + dimension] is None and self.sizes["min_" + dimension]:
-            return get_number_in_range(needed, min_=self.sizes["min_" + dimension]() - scrollbar)
+        elif self.sizes("min_" + dimension) is None and self.sizes("max_" + dimension):
+            return get_number_in_range(needed, max_=self.sizes("max_" + dimension) - scrollbar)
+        elif self.sizes("max_" + dimension) is None and self.sizes("min_" + dimension):
+            return get_number_in_range(needed, min_=self.sizes("min_" + dimension) - scrollbar)
         else:
-            return get_number_in_range(needed, min_=self.sizes["min_" + dimension]() - scrollbar, max_=self.sizes["max_" + dimension]() - scrollbar)
+            return get_number_in_range(needed, min_=self.sizes("min_" + dimension) - scrollbar, max_=self.sizes("max_" + dimension) - scrollbar)
 
     def _get_dimensions(self, dimension):
         """Get needed size of scrollwindow and size of scrollbar.
@@ -292,20 +322,63 @@ class ScrollablePanel(Panel):
         """
         getLogger(__name__+".ScrollablePanel._get_dimensions").debug("_get_dimensions called.")
         if dimension == "width":
-            return self.scrollwindow.winfo_reqwidth(), self.yscrlbr.winfo_width()
+            return self.scrollwindow.winfo_reqwidth(), self.yscrlbr.winfo_width() if not "disabled" in self.yscrlbr.state() else 0
         elif dimension == "height":
-            return self.scrollwindow.winfo_reqheight(), self.xscrlbr.winfo_height()
+            return self.scrollwindow.winfo_reqheight(), self.xscrlbr.winfo_height() if not "disabled" in self.xscrlbr.state() else 0
         else:
             raise ValueError("Invalid value for dimension: {0}".format(dimension))
         return
 
+    def sizes(self, size=None):
+        """Return filtered dimension given when object was called.
+
+        Filtered been, if dimension given was below 32, 32 is return.
+
+        size - dimension name | string or None
+            / Or None to return all as dictionary.
+            / Defaults to all.
+        """
+        if size is None:
+            d = {}
+            for key in self._sizes:
+                if callable(self._sizes[key]):
+                    d[key] = self._sizes[key]() if self._sizes[key]() >= 32 else 32
+                else:
+                    d[key] = self._sizes[key] if self._sizes[key] is None or self._sizes[key] >= 32 else 32
+            return d
+        else:
+            try:
+                if callable(self._sizes[size]):
+                    return self._sizes[size]() if self._sizes[size]() is None or self._sizes[size]() >= 32 else 32
+                else:
+                    return self._sizes[size] if self._sizes[size] is None or self._sizes[size] >= 32 else 32
+            except KeyError:
+                raise ValueError("Invalid dimension given.")
+
+
+class AutoScrollbar(ttk.Scrollbar, _Limitation):
+    """A scrollbar which hides itself if it is not needed, reappearing when needed."""
+
+    def set(self, lo, hi):
+        """Modified set."""
+        logger = getLogger(__name__+".AutoScrollbar.set")
+        logger.debug("AutoScrollbar Set called with: {0} {1}".format(lo, hi))
+        logger.debug("Passed to super")
+        if float(lo) <= 0.0 and float(hi) >= 1.0:
+            self.grid_remove()
+            logger.debug("Hiden "+self.name)
+        else:
+            self.grid()
+            logger.debug("Shown "+self.name)
+        ttk.Scrollbar.set(self, lo, hi)
+        return
 
 
 def main():
     mainprint(__doc__, xit=False)
     mb = MessageBox(msg=["Updating...", "This is my really long message for a MessageBox"], buttons={"ok":["OK", lambda: print("OK")]}, title="Updating")
     mb.mainloop()
-    return None
+    return
 
 
 if __name__ == "__main__":
