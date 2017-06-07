@@ -129,7 +129,7 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
         if icon_path:
             try:
                 self.icon_image = ImageTk.PhotoImage(Image.open(icon_path).resize((48, 48), Image.ANTIALIAS))
-                self.icon = ttk.Label(self.main, image=self.icon_image)    
+                self.icon = ttk.Label(self.main, image=self.icon_image)
             except FileNotFoundError:
                 self.icon = ttk.Label(self.main, text="Failed to\nLoad Icon")
                 logger.exception("FileNotFoundError while adding icon.")
@@ -167,8 +167,8 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
 class ScrollablePanel(Panel, _Limitation):
     """Custom scrolling frame widget.
 
-    With auto resizing, max sizes, min sizes, scroll wheel auto (un)binding for
-    x and y and more.
+    With auto resizing, max sizes, min sizes, auto-scollbars, scroll wheel auto
+    (un)binding for x and y and more.
 
     """
 
@@ -221,8 +221,12 @@ class ScrollablePanel(Panel, _Limitation):
             self.auto_hide_scrollbars = True
         super().__init__(root, *args, **kwargs)
 
-        self.xscrlbr = AutoScrollbar(self, orient="horizontal", name="ybar")
-        self.yscrlbr = AutoScrollbar(self, orient="vertical", name="xbar")
+        self.xscrlbr = AutoScrollbar(self, orient="horizontal", name="ybar",
+                                     show_callback=self._bind_x,
+                                     hide_callback=self._unbind_x)
+        self.yscrlbr = AutoScrollbar(self, orient="vertical", name="xbar",
+                                     show_callback=self._bind_y,
+                                     hide_callback=self._unbind_y)
         self.canvas = tk.Canvas(self)
         self.canvas.config(relief="flat", width=20, heigh=20, bd=2)
         self.xscrlbr.config(command=self.canvas.xview)
@@ -243,42 +247,68 @@ class ScrollablePanel(Panel, _Limitation):
         # Only useful when you make self bigger than contence in
         # scrollwindow, to cover unused frame space.
         self.scrollwindow.bind("<Configure>", self._configure_window)
-        self.scrollwindow.bind("<Enter>", self._bound_to_mousewheel_y)
-        self.scrollwindow.bind("<Leave>", self._unbound_to_mousewheel)
-        self.xscrlbr.bind("<Enter>", self._bound_to_mousewheel_x)
-        self.xscrlbr.bind("<Leave>", self._unbound_to_mousewheel)
-        self.yscrlbr.bind("<Enter>", self._bound_to_mousewheel_y)
-        self.yscrlbr.bind("<Leave>", self._unbound_to_mousewheel)
         logger.debug("ScrollablePanel setup complete.")
         return
 
     def update(self):
-        self._configure_window(None)
+        return self._configure_window(None)
+
+    def _bind_y(self):
+        """Bind all y binds."""
+        self.scrollwindow.bind("<Enter>", self._bound_to_mousewheel_y)
+        self.scrollwindow.bind("<Leave>", self._unbound_to_mousewheel)
+        self.yscrlbr.bind("<Enter>", self._bound_to_mousewheel_y)
+        self.yscrlbr.bind("<Leave>", self._unbound_to_mousewheel)
+        return
+
+    def _unbind_y(self):
+        """Unbind all y binds."""
+        self.scrollwindow.unbind("<Enter>")
+        self.scrollwindow.unbind("<Leave>")
+        self.yscrlbr.unbind("<Enter>")
+        self.yscrlbr.unbind("<Leave>")
+        return
+
+    def _bind_x(self):
+        """Bind all x binds."""
+        self.xscrlbr.bind("<Enter>", self._bound_to_mousewheel_x)
+        self.xscrlbr.bind("<Leave>", self._unbound_to_mousewheel)
+        return
+
+    def _unbind_x(self):
+        self.xscrlbr.unbind("<Enter>")
+        self.xscrlbr.unbind("<Leave>")
+        return
 
     def _bound_to_mousewheel_x(self, event):
         """Mouse bind x."""
-        getLogger(__name__+".ScrollablePanel._bound_to_mousewheel_x").debug("Binding mouse wheel scroll to ybar.")
+        #getLogger(__name__+".ScrollablePanel._bound_to_mousewheel_x").debug("Binding mouse wheel scroll to ybar.")
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_x)
+        return
 
     def _bound_to_mousewheel_y(self, event):
         """Mouse bind y."""
-        getLogger(__name__+".ScrollablePanel._bound_to_mousewheel_y").debug("Binding mouse wheel scroll to ybar.")
+        #getLogger(__name__+".ScrollablePanel._bound_to_mousewheel_y").debug("Binding mouse wheel scroll to ybar.")
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_y)
+        return
 
     def _unbound_to_mousewheel(self, event):
         """Mouse unbind."""
-        getLogger(__name__+".ScrollablePanel._unbound_to_mousewheel").debug("Unbinding mouse wheel scroll to ybar.")
+        #getLogger(__name__+".ScrollablePanel._unbound_to_mousewheel").debug("Unbinding mouse wheel scroll to ybar.")
         self.canvas.unbind_all("<MouseWheel>")
+        return
 
     def _on_mousewheel_y(self, event):
         """Mouse scroll y."""
-        getLogger(__name__+".ScrollablePanel._on_mousewheel_y").debug("MouseWheel scroll")
+        #getLogger(__name__+".ScrollablePanel._on_mousewheel_y").debug("MouseWheel scroll")
         self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        return
 
     def _on_mousewheel_x(self, event):
         """Mouse scroll x."""
-        getLogger(__name__+".ScrollablePanel._on_mousewheel_x").debug("MouseWheel scroll")
+        #getLogger(__name__+".ScrollablePanel._on_mousewheel_x").debug("MouseWheel scroll")
         self.canvas.xview_scroll(int(-1*(event.delta/120)), "units")
+        return
 
     def _configure_window(self, event):
         # update the scrollbars to match the size of the inner frame
@@ -293,7 +323,7 @@ class ScrollablePanel(Panel, _Limitation):
         if self.scrollwindow.winfo_reqheight() != self.canvas.winfo_height():
             # update the canvas"s width to fit the inner
             self.canvas.config(height=self._size_cal("height"))
-
+        return
 
     def _size_cal(self, dimension, *args, **kwargs):
         """Return size for canvas config.
@@ -357,7 +387,34 @@ class ScrollablePanel(Panel, _Limitation):
 
 
 class AutoScrollbar(ttk.Scrollbar, _Limitation):
-    """A scrollbar which hides itself if it is not needed, reappearing when needed."""
+    """A scrollbar which hides itself if it is not needed, reappearing when needed.
+
+    With callbacks when hide and show.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Adding callbacks.
+
+        Standard Scrollbar args
+        Plus:
+        show_callback - Function to call when shown | Function
+        hide_callback - Function to call when hiden | Function
+            / Both are not required.
+
+        """
+        if "show_callback" in kwargs:
+            self.show_callback = kwargs["show_callback"]
+            del(kwargs["show_callback"])
+        else:
+            self.show_callback = None
+        if "hide_callback" in kwargs:
+            self.hide_callback = kwargs["hide_callback"]
+            del(kwargs["hide_callback"])
+        else:
+            self.hide_callback = None
+        super().__init__(*args, **kwargs)
+        return
 
     def set(self, lo, hi):
         """Modified set."""
@@ -366,10 +423,14 @@ class AutoScrollbar(ttk.Scrollbar, _Limitation):
         logger.debug("Passed to super")
         if float(lo) <= 0.0 and float(hi) >= 1.0:
             self.grid_remove()
-            logger.debug("Hiden "+self.name)
+            if self.hide_callback:
+                self.hide_callback()
+            logger.debug("Hiden")
         else:
             self.grid()
-            logger.debug("Shown "+self.name)
+            if self.show_callback:
+                self.show_callback()
+            logger.debug("Shown")
         ttk.Scrollbar.set(self, lo, hi)
         return
 
