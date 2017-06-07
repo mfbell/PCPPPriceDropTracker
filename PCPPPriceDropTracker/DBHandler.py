@@ -55,7 +55,7 @@ class Handler(Tools):
     def updater(self, call_when_done=None):
         """Rapper method for Updater."""
         getLogger(__name__+".Handler.updater").debug("Updater rapper called.")
-        updater = Updater(country=self.country, path=self.path, debug=self.debug, call_when_done=call_when_done, run=True)
+        updater = Updater(country=self.country, path=self.path, call_when_done=call_when_done, run=True)
         return
 
     def search(self, columns="*", filters=None, search_string=None, filter_data=None):
@@ -520,7 +520,7 @@ class Updater(Handler, Thread_tools):
         logger.debug("DB Updater running.")
         self.open()
         self.first_setup()
-        data = scraper(self.country, debug=self.debug)
+        data = scraper(self.country)
         actives = []
         for item in data:
             # Check if offer already in offers table.

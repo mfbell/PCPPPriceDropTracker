@@ -17,6 +17,8 @@ STATUS = "Ongoing development"
 URL = ""
 __doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
+from logging import getLogger
+
 
 class Error(Exception):
     """General Error class."""

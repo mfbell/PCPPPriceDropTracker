@@ -326,7 +326,7 @@ class Search_Filter_Panel(ScrollablePanel):
 
         win.title.grid(column=0, row=0)
 
-        if 0:
+        if 1:
             win.mytext = ttk.Label(win, text="\n".join([str(a)*20 for a in range(100)]))
             win.mytext.grid(column=0, row=1)
 
