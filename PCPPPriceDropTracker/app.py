@@ -1,29 +1,16 @@
-"""Interface and control for PCPPPriceDropTracker.
+"""PCPPPriceDropTracker interface and control.
 
 Including the GUI, GUI Tools and other stuff.
 
-Written by {0}
-Version {1}
-Status: {2}
-Licensed under {3}
-URL: {4}
-
 """
-
-AUTHOR = "mtech0 | https://github.com/mtech0"
-LICENSE = "GNU-GPLv3 | https://www.gnu.org/licenses/gpl.txt"
-VERSION = "0.7.0"
-STATUS = "Development"
-URL = ""
-__doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 import tkinter as tk
 import tkinter.ttk as ttk
 from logging import getLogger
-from .DBHandler import Handler
-from .tools import Tools
-from .customWidgets import Panel, MessageBox, ScrollablePanel
 
+from DBHandler import Handler
+from tools import Tools
+from customWidgets import Panel, MessageBox, ScrollablePanel
 
 
 class App(Panel):
@@ -181,6 +168,19 @@ class Results_Panel(Panel):
         logger = getLogger(__name__+".Results_Panel.__init__")
         logger.debug("Results_Panel initalization.")
         data = None
+        self.columns = {"flames": ["Flame", -1],
+                        "name": ["Product", -1],
+                        "%": ["%", -1],
+                        "prev": ["Previous", -1],
+                        "curr": ["Current", -1],
+                        "save": ["Save", -1],
+                        "shop-link": ["Open", -1],
+                        }
+        self.sub_columns = {"pcpp": ["PCPP", -1],
+                            "cat": ["Catagory", -1],
+                            "update": ["Update Time", -1],
+                            }
+        self.rows = 20
         if "open_search_data" in kwargs:
             logger.debug("Results panel to open externally.")
             self.columns, self.search_text, data = kwargs["open_search_data"]
@@ -188,7 +188,7 @@ class Results_Panel(Panel):
         super().__init__(root, *args, **kwargs)
         if data is None:
             self.columns = self.root.show_columns
-        self.tree = ttk.Treeview(self, column=([col for col in self.columns][1:]), height=20)
+        self.tree = ttk.Treeview(self, column=([col for col in self.columns][1:]), height=self.rows)
         first = True
         for col in self.columns:
             if first:
@@ -225,8 +225,9 @@ class Results_Panel(Panel):
         results = self.root.db_handler.search(self.root.show_columns, self.root.search_filters.get(), None)
         return self.add(results)
 
-    def add_by_id(self, ids):
+    def _add_by_id(self, ids):
         """Add offer to the Treeview by OfferID.
+        //Not tested, believe to not work//
 
         ids - A list/tuple of OfferIDs | list/tuple
             / Can be [(id,), ...] as got from query.

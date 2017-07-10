@@ -1,30 +1,16 @@
 """Datebase handler for PCPPPriceDropTracker.
 
-
-
-Written by {0}
-Version {1}
-Status: {2}
-Licensed under {3}
-URL: {4}
-
 """
-
-AUTHOR = "mtech0 | https://github.com/mtech0"
-LICENSE = "GNU-GPLv3 | https://www.gnu.org/licenses/gpl.txt"
-VERSION = "0.9.2"
-STATUS = "Development"
-URL = ""
-__doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 import sqlite3
 from time import time
 import json
 from itertools import permutations
 from logging import getLogger
-from .errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
-from .tools import main, Tools, Thread_tools
-from .dataScraper import scraper
+
+from errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
+from tools import main, Tools, Thread_tools
+from dataScraper import scraper
 
 class Handler(Tools):
     """The database handler."""

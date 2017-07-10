@@ -1,0 +1,29 @@
+{
+  "project": {
+    "mode": "GUI-only",
+    "update": "true"
+  },
+  "databases": {
+    "update": [
+      "pcpp_offers.sqlite3"
+    ],
+    "default": "pcpp_offers.sqlite3",
+    "previous": []
+  },
+  "global_db_settings": {
+    "updating": {
+      "wait": 21600
+    },
+    "notifications": {
+      "method": "null",
+      "notify": "immediately",
+      "renotify_after_updating": "false",
+      "renotify_after_time": 0
+    }
+  },
+  "logging": {
+    "path": "./logs/",
+    "filename": "%Y-%m-%d %H-%M-%S.log",
+    "level": "DEBUG"
+  }
+}

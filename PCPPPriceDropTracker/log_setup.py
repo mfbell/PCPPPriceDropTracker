@@ -1,27 +1,13 @@
 """The logging module of PCPPPriceDropTracker.
 
-
-
-Written by {0}
-Version {1}
-Status: {2}
-Licensed under {3}
-URL: {4}
-
 """
-
-AUTHOR = "mtech0 | https://github.com/mtech0"
-LICENSE = "GNU-GPLv3 | https://www.gnu.org/licenses/gpl.txt"
-VERSION = "0.0.0"
-STATUS = "Development"
-URL = ""
-__doc__ = __doc__.format(AUTHOR, VERSION, STATUS, LICENSE, URL)
 
 import logging
 import logging.config
 from time import strftime
 import os
-from .tools import main, get_git_commit_hash
+
+from tools import main, get_git_commit_hash
 
 DATETIME = strftime("%Y-%m-%d %H-%M-%S")
 LOG_DIR = ".\logs"

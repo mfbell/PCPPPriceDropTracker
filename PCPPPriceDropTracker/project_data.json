@@ -1,0 +1,60 @@
+{
+  "authors": {
+    "mtech0": {
+      "name": "mtech0",
+      "url": "https://github.com/mtech0",
+      "contact": "Github"
+    }
+  },
+  "project": {
+    "name": "PCPPPriceDropTracker",
+    "description": "Track price drops on PC Part Picker",
+    "long_description": "README.rst",
+    "version": "0.1.0",
+    "status": "Development",
+    "url": "https://github.com/mtech0/PCPPPriceDropTracker",
+    "commit": {
+      "long": "3f6703b16fba07e87965bf6f37979bfdaa2b481d",
+      "short": "3f6703b"
+    },
+    "license": {
+      "name": "To be confirmed",
+      "url": "https://www.gnu.org/licenses/gpl.txt",
+      "file": "LICENSE.txt"
+    },
+    "config_file": "config.json",
+    "requirements": "requirements.txt",
+    "keywords": "price drop tracker automatic notifications interface",
+    "classifiers": [
+      "Development Status :: 3 - Alpha",
+      "Intended Audience :: Developers",
+      "Intended Audience :: End Users/Desktop",
+      "Intended Audience :: Information Technology",
+      "Topic :: Utilities",
+      "License :: TBC",
+      "Natural Language :: English",
+      "Programming Language :: Python :: 3",
+      "Programming Language :: Python :: 3.6"
+    ],
+    "entry_points": {
+      "console_scripts": [
+        "dev = PCPPPriceDropTracker.__main__:main"
+      ],
+      "gui_scripts": [
+        "PCPPPriceDropTracker = PCPPPriceDropTracker.__main__:main"
+      ]
+    },
+    "include_package_data": "true",
+    "exclude-packages": []
+  },
+  "_comments": {
+    "long_description": "Needs to be corrected.",
+    "license.name": "Needs updating.",
+    "license.url": "Needs updating.",
+    "keywords": "Needs updating.",
+    "classifiers": "License entry needs updating.",
+    "entry_points": "Update.",
+    "exclude-packages": "Update.",
+    "config_file": "Needs to be corrected."
+  }
+}
