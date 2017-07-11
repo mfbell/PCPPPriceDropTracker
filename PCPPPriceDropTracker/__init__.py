@@ -1,4 +1,4 @@
-"""PCPPPriceDropTracker main __init__ module.""""
+"""PCPPPriceDropTracker main __init__ module."""
 
 from tools import main
 from app import main as app_main

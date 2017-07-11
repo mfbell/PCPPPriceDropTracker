@@ -9,7 +9,7 @@ import tkinter.ttk as ttk
 from logging import getLogger
 
 from DBHandler import Handler
-from tools import Tools
+from tools import Tools, PD
 from customWidgets import Panel, MessageBox, ScrollablePanel
 
 
@@ -39,7 +39,7 @@ class App(Panel):
             self.db_handler = Handler()
 
         # Window setup
-        self.root.title("PCPPPriceDropTracker {0}".format(VERSION))
+        self.root.title("PCPPPriceDropTracker {0}".format(PD["project"]["version"]))
         self.root.option_add('*tearOff', False)
             # ColName:[DisplayName, width (-1=Default)]
         self.show_columns = {"Name":["Name", 450],
