@@ -3,15 +3,14 @@
 __all__ = ["BuildDocs"]
 
 import requests
-from os import walk, path
 
 try:
     from .tools import main
-    from .project_data_handler import PDHandler
+    from .project_data_handler import PDHandler, PD
 except ImportError as e:
     try:
         from tools import main
-        from project_data_handler import PDHandler
+        from project_data_handler import PDHandler, PD
     except Exception as e2:
         raise e
 
@@ -37,14 +36,17 @@ class BuildDocs():
     """
 
     def __init__(self):
-        doc_templates = path.abspath("doc_templates")
-        export_config_file_name = "export_config.json"
-        export_config_path = path.join(doc_templates, export_config_file_name)
-        files = []
-        for (dirpath, dirnames, filenames) in walk(doc_templates):
-            files.extend([[f, path.join(doc_templates, f)] for f in filenames if f != export_config_file_name])
-        self.pdh = PDHandler("INPUT")
-        data = self.pdh.data.copy()
+        """"""
+        self.build()
+        return
+
+
+    def build(self):
+        """Build the docs."""
+        doc_templates = path.abspath(PD["doc_templates"]["folder"])
+        export_config_path = path.join(PD["doc_templates"]["config"])
+        config = PDHandler(path=export_config_path)
+        data = PD.copy()
         _authors = data["authors"]
         data["authors-names"] = ", ".join([_authors[a]["name"] for a in _authors])
         data["authors-w-url"] = ", ".join([_authors[a]["name"] + " " +
@@ -53,10 +55,9 @@ class BuildDocs():
                                                 _authors[a]["url"] + "\nContact via " +
                                                 _authors[a]["contact"] for a in _authors])
         data["full-license"] = self.get_license
-        export_config = PDHandler(export_config_path)
-        for name, fp in files:
-            with open(fp, "r") as f:
-                with open(export_config.data[name]["path"], "w") as f2:
+        for filename in config:
+            with open(path.join(doc_templates, filename), "r") as f:
+                with open(config[filename]["path"], "w") as f2:
                     f2.write(f.read().format(**data))
         return
 

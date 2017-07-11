@@ -23,6 +23,11 @@
       "file": "LICENSE.txt"
     },
     "config_file": "config.json",
+    "doc_templates": {
+      "folder": "doc_templates",
+      "config": "doc_templates/export_config.json"
+    },
+
     "requirements": "requirements.txt",
     "keywords": "price drop tracker automatic notifications interface",
     "classifiers": [
