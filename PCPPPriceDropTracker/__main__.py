@@ -4,13 +4,23 @@ Work In Progress.
 
 """
 
-import sys
+#import sys
+from logging import getLogger
 
-from __init__ import run
+from widgets import App
+from log_setup import setup
+from tools import pdname
 
 def main(args=None):
     """The main routine."""
-    run()
+    setup()
+    logger = getLogger(pdname+"."+__name__+".main")
+    logger.debug("Logging setup. Main called, calling and running App")
+    app = App()
+    app.mainloop()
+    logger.debug("App closed.")
+    return
+
     """if args is None:
         args = sys.argv[1:]
 

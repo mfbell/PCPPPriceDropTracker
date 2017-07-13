@@ -7,7 +7,7 @@ import logging.config
 from time import strftime
 import os
 
-from tools import main, get_git_commit_hash
+from tools import main, get_git_commit_hash, pdname
 
 DATETIME = strftime("%Y-%m-%d %H-%M-%S")
 LOG_DIR = ".\logs"
@@ -21,13 +21,13 @@ LOG_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "loggers": {
-        "PCPPPriceDropTracker": {
+        pdname : {
             "level": "INFO",
             "handlers": ["consoleHandler", "fileHandler"],
             "propagate": False
         },
-        "PCPPPriceDropTracker.customWidgets": {
-            "level": "DEBUG",
+        pdname + ".widgets": {
+            "level": "INFO",
             "propagate": True
         }
     },

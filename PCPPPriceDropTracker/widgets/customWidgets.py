@@ -11,7 +11,7 @@ import tkinter.ttk as ttk
 from PIL import ImageTk, Image
 from logging import getLogger
 
-from tools import Tools, Thread_tools, get_number_in_range
+from tools import Tools, Thread_tools, get_number_in_range, pdname
 from tools import main as mainprint
 
 
@@ -30,7 +30,7 @@ class Panel(ttk.Frame, Tools):
 
     def __init__(self, root, *args, **kwargs):
         """Initialization. Same args as ttk.Frame and Tools."""
-        getLogger(__name__+".Panel.__init__").debug("Panel object called.")
+        getLogger(pdname+"."+__name__+".Panel.__init__").debug("Panel object called.")
         self.root = root
         Tools.__init__(self, *args, **kwargs)
         ttk.Frame.__init__(self, self.root, *self.args, **self.kwargs)
@@ -61,7 +61,7 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
         Entry box maybe?
 
         """
-        logger = getLogger(__name__+".MessageBox.__init__")
+        logger = getLogger(pdname+"."+__name__+".MessageBox.__init__")
         logger.debug("MessageBox initialization.")
         tk.Toplevel.__init__(self)
         if "msg" in kwargs:
@@ -72,9 +72,9 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
             msg = []
         logger.debug("Messages: {0}".format(msg))
         if "title" in kwargs:
-            self.title = kwargs["title"]
+            self.title(kwargs["title"])
         else:
-            self.title = "Message"
+            self.title("MessageBox")
         logger.debug("Title: {0}".format(self.title))
         if "icon" in kwargs:
             icon_path = kwargs["icon"]
@@ -92,7 +92,7 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
 
         # mainframe of padding
         self.main = ttk.Frame(self, padding=6)
-        self.main.pack()
+        self.main.grid()
 
         # messages
         self.msgs = []
@@ -172,7 +172,7 @@ class ScrollablePanel(Panel, _Limitation):
         I did get it working vertical at 20 but idk.
 
         """
-        logger = getLogger(__name__+".ScrollablePanel.__init__")
+        logger = getLogger(pdname+"."+__name__+".ScrollablePanel.__init__")
         logger.debug("ScrollablePanel called.")
         self._sizes = {}
         if "max_width" in kwargs:
@@ -263,37 +263,37 @@ class ScrollablePanel(Panel, _Limitation):
 
     def _bound_to_mousewheel_x(self, event):
         """Mouse bind x."""
-        #getLogger(__name__+".ScrollablePanel._bound_to_mousewheel_x").debug("Binding mouse wheel scroll to ybar.")
+        #getLogger(pdname+"."+__name__+".ScrollablePanel._bound_to_mousewheel_x").debug("Binding mouse wheel scroll to ybar.")
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_x)
         return
 
     def _bound_to_mousewheel_y(self, event):
         """Mouse bind y."""
-        #getLogger(__name__+".ScrollablePanel._bound_to_mousewheel_y").debug("Binding mouse wheel scroll to ybar.")
+        #getLogger(pdname+"."+__name__+".ScrollablePanel._bound_to_mousewheel_y").debug("Binding mouse wheel scroll to ybar.")
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel_y)
         return
 
     def _unbound_to_mousewheel(self, event):
         """Mouse unbind."""
-        #getLogger(__name__+".ScrollablePanel._unbound_to_mousewheel").debug("Unbinding mouse wheel scroll to ybar.")
+        #getLogger(pdname+"."+__name__+".ScrollablePanel._unbound_to_mousewheel").debug("Unbinding mouse wheel scroll to ybar.")
         self.canvas.unbind_all("<MouseWheel>")
         return
 
     def _on_mousewheel_y(self, event):
         """Mouse scroll y."""
-        #getLogger(__name__+".ScrollablePanel._on_mousewheel_y").debug("MouseWheel scroll")
+        #getLogger(pdname+"."+__name__+".ScrollablePanel._on_mousewheel_y").debug("MouseWheel scroll")
         self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         return
 
     def _on_mousewheel_x(self, event):
         """Mouse scroll x."""
-        #getLogger(__name__+".ScrollablePanel._on_mousewheel_x").debug("MouseWheel scroll")
+        #getLogger(pdname+"."+__name__+".ScrollablePanel._on_mousewheel_x").debug("MouseWheel scroll")
         self.canvas.xview_scroll(int(-1*(event.delta/120)), "units")
         return
 
     def _configure_window(self, event):
         # update the scrollbars to match the size of the inner frame
-        logger = getLogger(__name__+".ScrollablePanel._configure_window")
+        logger = getLogger(pdname+"."+__name__+".ScrollablePanel._configure_window")
         logger.debug("Update widgets.")
         size = (self.scrollwindow.winfo_reqwidth(), self.scrollwindow.winfo_reqheight())
         logger.debug("Current size %s", size)
@@ -312,7 +312,7 @@ class ScrollablePanel(Panel, _Limitation):
         dimension - width or height | string
 
         """
-        logger = getLogger(__name__+".ScrollablePanel._size_cal")
+        logger = getLogger(pdname+"."+__name__+".ScrollablePanel._size_cal")
         logger.debug("Size calculator called.")
         logger.debug("Values given: max_width {max_width}, max_heighth {max_height}, min_width {min_width}, min_height {min_height}".format(**self.sizes()))
         needed, scrollbar = self._get_dimensions(dimension)
@@ -331,7 +331,7 @@ class ScrollablePanel(Panel, _Limitation):
         dimension - width or height | string
 
         """
-        getLogger(__name__+".ScrollablePanel._get_dimensions").debug("_get_dimensions called.")
+        getLogger(pdname+"."+__name__+".ScrollablePanel._get_dimensions").debug("_get_dimensions called.")
         if dimension == "width":
             return self.scrollwindow.winfo_reqwidth(), self.yscrlbr.winfo_width() if not "disabled" in self.yscrlbr.state() else 0
         elif dimension == "height":
@@ -399,7 +399,7 @@ class AutoScrollbar(ttk.Scrollbar, _Limitation):
 
     def set(self, lo, hi):
         """Modified set."""
-        logger = getLogger(__name__+".AutoScrollbar.set")
+        logger = getLogger(pdname+"."+__name__+".AutoScrollbar.set")
         logger.debug("AutoScrollbar Set called with: {0} {1}".format(lo, hi))
         logger.debug("Passed to super")
         if float(lo) <= 0.0 and float(hi) >= 1.0:

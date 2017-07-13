@@ -12,7 +12,7 @@ class Error(Exception):
         """Error Raising."""
         if not msg:
             msg = self.__doc__
-        getLogger(__name__).exception("Exception raised: {0}".format(msg))
+        getLogger(pdname+"."+__name__).exception("Exception raised: {0}".format(msg))
         super().__init__(msg)
         self.msg = msg
         self.args = args

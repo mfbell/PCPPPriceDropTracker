@@ -9,7 +9,7 @@ from itertools import permutations
 from logging import getLogger
 
 from errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
-from tools import main, Tools, Thread_tools
+from tools import main, Tools, Thread_tools, pdname
 from dataScraper import scraper
 
 class Handler(Tools):
@@ -24,7 +24,7 @@ class Handler(Tools):
         **kwargs - debug = debug object
 
         """
-        logger = getLogger(__name__+".Handler.__init__")
+        logger = getLogger(pdname+"."+__name__+".Handler.__init__")
         logger.debug("Database handler initalization.")
         self.path = path
         countries = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us"]
@@ -40,7 +40,7 @@ class Handler(Tools):
     # DB Tools or Handling Tools
     def updater(self, call_when_done=None):
         """Rapper method for Updater."""
-        getLogger(__name__+".Handler.updater").debug("Updater rapper called.")
+        getLogger(pdname+"."+__name__+".Handler.updater").debug("Updater rapper called.")
         updater = Updater(country=self.country, path=self.path, call_when_done=call_when_done, run=True)
         return
 
@@ -110,7 +110,7 @@ class Handler(Tools):
             Stuff like all column smart searching, rank results by relivance eta.
 
         """
-        logger = getLogger(__name__+".Handler.search")
+        logger = getLogger(pdname+"."+__name__+".Handler.search")
         logger.debug("Search method called.")
         # Smart Search
         if not search_string:
@@ -158,7 +158,7 @@ class Handler(Tools):
         Also run when connecting to check all tables exist eta.
 
         """
-        logger = getLogger(__name__+".Handler.first_setup")
+        logger = getLogger(pdname+"."+__name__+".Handler.first_setup")
         logger.debug("first_setup called.")
         self.query("PRAGMA foreign_keys = ON;")
         self.query("""CREATE TABLE IF NOT EXISTS Products(
@@ -204,7 +204,7 @@ class Handler(Tools):
         displayed - Removed displayed offers | boolean
 
         """
-        getLogger(__name__+".Handler.clean_up").debug("clean_up called, removing non-active entries, removing displayed: {0}".formated(displayed))
+        getLogger(pdname+"."+__name__+".Handler.clean_up").debug("clean_up called, removing non-active entries, removing displayed: {0}".formated(displayed))
         self.query("DELETE FROM Offers WHERE Active=0")
         if displayed:
             self.query("DELETE FROM Offers WHERE Displayed=1")
@@ -216,7 +216,7 @@ class Handler(Tools):
         item - all item data | dict
 
         """
-        logger = getLogger(__name__+".Handler.get_product_id")
+        logger = getLogger(pdname+"."+__name__+".Handler.get_product_id")
         logger.debug("Call to get_product_id.")
         results = self.query("SELECT ProductID FROM Products WHERE Name=?", (item["name"],))
         logger.debug("Result: {0}".format(results))
@@ -233,7 +233,7 @@ class Handler(Tools):
         cat - the catagorty | sting
 
         """
-        logger = getLogger(__name__+".Handler.get_catagorty_id")
+        logger = getLogger(pdname+"."+__name__+".Handler.get_catagorty_id")
         logger.debug("Call to get_catagorty_id, get id of catagorty {0}".format(cat))
         result = self.query("SELECT ProductTypeID FROM ProductTypes WHERE Description=?", (cat,))
         logger.debug("Result: {0}".format(result))
@@ -245,7 +245,7 @@ class Handler(Tools):
 
     def open(self):
         """Open a connection to a database."""
-        getLogger(__name__+".Handler.open").debug("Opening connection to db: {0}".format(self.path))
+        getLogger(pdname+"."+__name__+".Handler.open").debug("Opening connection to db: {0}".format(self.path))
         self.db = sqlite3.connect(self.path)
         self.c = self.db.cursor()
         return
@@ -256,7 +256,7 @@ class Handler(Tools):
         commit - Do a final commit? | boolean
 
         """
-        getLogger(__name__+".Handler.close").debug("Closing connection to db, with commmit: {0}".format(commit))
+        getLogger(pdname+"."+__name__+".Handler.close").debug("Closing connection to db, with commmit: {0}".format(commit))
         if commit:
             self.db.commit()
         self.db.close()
@@ -272,7 +272,7 @@ class Handler(Tools):
         """
         if not sql.endswith(";"):
             sql += ";"
-        getLogger(__name__+".Handler.query").debug("Querying db with '{0}' and data: {1}".format(" ".join([p.strip() for p in sql.split()]), data))
+        getLogger(pdname+"."+__name__+".Handler.query").debug("Querying db with '{0}' and data: {1}".format(" ".join([p.strip() for p in sql.split()]), data))
         self.c.execute(sql, data)
         self.db.commit()
         return self.c.fetchall()
@@ -284,7 +284,7 @@ class Handler(Tools):
         key - property name | string
 
         """
-        getLogger(__name__+".Handler.property_get").debug("Get property: {0}".format(key))
+        getLogger(pdname+"."+__name__+".Handler.property_get").debug("Get property: {0}".format(key))
         # Not sqli protected but it is app-side, may change in future.
         columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
         if not key in columns: # A bit of sqli protection as I could not get ? to work.
@@ -302,7 +302,7 @@ class Handler(Tools):
 
         """
         # Does not really need sqli protection as it is app only facing and I can't get ? to work here.
-        getLogger(__name__+".Handler.property_add").debug("property_add called with key {0}, value: {1}, constraint {2}".format(key, value, constraint))
+        getLogger(pdname+"."+__name__+".Handler.property_add").debug("property_add called with key {0}, value: {1}, constraint {2}".format(key, value, constraint))
         self.query("ALTER TABLE Properties ADD COLUMN {0} {1}".format(key, constraint))
         if value:
             self.property_set(key, value)
@@ -316,7 +316,7 @@ class Handler(Tools):
             / Not required but if given set.
 
         """
-        getLogger(__name__+".Handler.property_set").debug("Property set: key {0}, value {1}".format(key, value))
+        getLogger(pdname+"."+__name__+".Handler.property_set").debug("Property set: key {0}, value {1}".format(key, value))
         columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
         if not key in columns: # A bit of sqli protection as I could not get ? to work.
             raise UnknownPropertyError("Unknown property: {0}".format(key))
@@ -333,7 +333,7 @@ class Handler(Tools):
         name - Name of filter | string
 
         """
-        getLogger(__name__+".Handler.filter_add").debug("Add filter called. filter {0}, name {0}".format(filter_, name))
+        getLogger(pdname+"."+__name__+".Handler.filter_add").debug("Add filter called. filter {0}, name {0}".format(filter_, name))
         self.query("INSERT INTO Filters(Name, Filter, Date_Time) VALUES (?,?,?)", (name, json.dumps(filter_), time()))
         return
 
@@ -343,7 +343,7 @@ class Handler(Tools):
         ID - Filter name or FilterID | int or string
 
         """
-        getLogger(__name__+".Handler.filter_delete").debug("Deleting filter {0}".format(ID))
+        getLogger(pdname+"."+__name__+".Handler.filter_delete").debug("Deleting filter {0}".format(ID))
         if isinstance(ID, int):
             self.query("DELETE FROM Filters WHERE FilterID=?", (ID,))
         elif isinstance(ID, str):
@@ -383,7 +383,7 @@ class Handler(Tools):
         Value: Is the value you want to filter by.
 
         """
-        logger = getLogger(__name__+".Handler.filter_do")
+        logger = getLogger(pdname+"."+__name__+".Handler.filter_do")
         if ID == ":CUSTOM:":
             pass
         elif isinstance(ID, int):
@@ -489,7 +489,7 @@ class Updater(Handler, Thread_tools):
         objects but be created inside the same thread... but i did it in
         run so???
         """
-        logger = getLogger(__name__+".Updater.__init__")
+        logger = getLogger(pdname+"."+__name__+".Updater.__init__")
         logger.debug("DB Updater initalization.")
         self.path = path
         countries = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us"]
@@ -502,7 +502,7 @@ class Updater(Handler, Thread_tools):
 
     def run(self):
         """Run the updater."""
-        logger = getLogger(__name__+".Updater.run")
+        logger = getLogger(pdname+"."+__name__+".Updater.run")
         logger.debug("DB Updater running.")
         self.open()
         self.first_setup()

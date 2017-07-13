@@ -9,7 +9,12 @@ __all__ = ["main",
            "Tools",
            "Thread_tools",
            "CallbackOnEditDict",
-           "SelfSavingDict"]
+           "SelfSavingDict",
+           # PDH
+           "PDHandler",
+           "PDPath",
+           "PD",
+           "pdname"]
 
 import os
 import sys
@@ -19,111 +24,7 @@ from time import time
 from threading import Thread
 from logging import getLogger
 
-
-def main(doc=None, itu=None, pause=True, xit=True):
-    """Module run as main function.
-
-    doc - Either docstring or info to print | string
-            / Defaults to 'README.md' file contents.
-    itu - If to print "Import to use." at the end | boolean
-            / Defaults to None
-            / Behaviour:
-                If doc=None and itu=None: itu=None
-                If doc=None and itu=False: itu=False
-                If doc=None and itu=True: itu=True
-            --> If doc=True and itu=None: itu=True
-                If doc=True and itu=False: itu=False
-                If doc=True and itu=True: itu=True
-    pause - Wait for user to press enter | boolean
-    xit - Auto exit? | boolean
-
-    """
-    if doc and itu == None:
-        itu = True
-    if not doc:
-        doc = open("README.md").read()
-    print("\n" + doc)
-    if itu:
-        print("Import to use.")
-    print()
-    if xit:
-        if pause:
-            print("Press Enter to exit...")
-        print("Terminated")
-        exit(0)
-    elif pause:
-        input("Press Enter to continue...")
-    return
-
-def get_number_in_range(number, min_=None, max_=None):
-    """If number is outside the range of min/max, the min/max it exceeds is
-    returned, if not the number is returned.
-
-    number - The middle number | integer
-    min_ - Minimum possible number | integer
-        / If not given, no minimum is set.
-    max_ - Maximum possible number | integer
-        / If not given, no maximum is set.
-
-    """
-    logger = getLogger(__name__+".get_number_in_range")
-    logger.debug("Call to get_number_in_range.")
-    logger.debug("Args given: {0}, {1}, {2}".format(number, min_, max_))
-    if min_ is None and max_ is None:
-        raise TypeError("get_number_in_range expected 2 arguments, got 1")
-    elif min_ is not None and max_ is None:
-        return max([min_, number])
-    elif max_ is not None and min_ is None:
-        return min([max_, number])
-    else:
-        return max([min_, min([max_, number])])
-
-def get_git_commit_hash(version="long"):
-    """Get git commit hash
-
-    version - either long or short | string
-        / Defaults to long
-
-    """
-    if version == "long":
-        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().replace("\n", "")
-    elif version == "short":
-        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().replace("\n", "")
-    else:
-        raise ValueError("Invalid arg for version.")
-
-class Tools():
-    """General Class Tools."""
-
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
-        getLogger(__name__+".Tools.__init__").debug("Tools Class called")
-        self.args = args
-        self.kwargs = kwargs
-        return
-
-
-class Thread_tools(Tools, Thread):
-    """Threading Class Tools."""
-
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
-        getLogger(__name__+".Thread_tools.__init__").debug("Thread_tools Class called.")
-        Thread.__init__(self)
-        Tools.__init__(self, *args, **kwargs)
-        self.autorun()
-        return
-
-    def autorun(self):
-        """Autorun thread if kwargs["run"] is True."""
-        logger = getLogger(__name__+".Tools.autorun")
-        logger.debug("Autorun called.")
-        if "run" in self.kwargs and self.kwargs["run"]:
-            logger.debug("Autorunning.")
-            self.start()
-        return
-
-
+# Data type classes
 class CallbackOnEditDict(dict):
     """Dictionary subclass with callback when edited.
 
@@ -138,7 +39,7 @@ class CallbackOnEditDict(dict):
     """
 
     def __init__(self, convert=None, callback=None, *a, **kw):
-        getLogger(__name__+".CallbackOnEditDict.__init__").debug("CallbackOnEditDict initialized.")
+        #getLogger(pdname+"."+__name__+".CallbackOnEditDict.__init__").debug("CallbackOnEditDict initialized.")
         if callback is None:
             raise TypeError("CallbackOnEditDict expected function for callback.")
         if not callable(callback):
@@ -151,7 +52,7 @@ class CallbackOnEditDict(dict):
         return
 
     def callback(self, condition=None):
-        getLogger(__name__+".CallbackOnEditDict.callback").debug("Callback called, {0}?, con: {0}".format(not self.setup_mode, condition))
+        #getLogger(pdname+"."+__name__+".CallbackOnEditDict.callback").debug("Callback called, {0}?, con: {0}".format(not self.setup_mode, condition))
         if self.setup_mode is not True:
             if condition == "set":
                 self.convert()
@@ -233,6 +134,141 @@ class SelfSavingDict(CallbackOnEditDict):
         with open(self.path, "w") as f:
             json.dump(self, f, indent=2)
         return
+
+# Project data handling
+# Path of project_data.
+PDPath = "X://coding//projects//PCPPPriceDropTracker//PCPPPriceDropTracker//project_data.json"
+
+class PDHandler(SelfSavingDict):
+    """Project Data Handler class.
+
+    To include other methods in the future.
+
+    """
+
+    def __init__(self, path=PDPath):
+        """Initialization
+
+        path - Path of project data | string
+            / Defaults to PDPath
+
+        """
+        super().__init__(path)
+        return
+
+
+# Pre-called PDHandler and project name.
+PD = PDHandler()
+pdname = PD["project"]["name"]
+
+# Other tools
+def main(doc=None, itu=None, pause=True, xit=True):
+    """Module run as main function.
+
+    doc - Either docstring or info to print | string
+            / Defaults to 'README.md' file contents.
+    itu - If to print "Import to use." at the end | boolean
+            / Defaults to None
+            / Behaviour:
+                If doc=None and itu=None: itu=None
+                If doc=None and itu=False: itu=False
+                If doc=None and itu=True: itu=True
+            --> If doc=True and itu=None: itu=True
+                If doc=True and itu=False: itu=False
+                If doc=True and itu=True: itu=True
+    pause - Wait for user to press enter | boolean
+    xit - Auto exit? | boolean
+
+    """
+    if doc and itu == None:
+        itu = True
+    if not doc:
+        doc = open("README.md").read()
+    print("\n" + doc)
+    if itu:
+        print("Import to use.")
+    print()
+    if xit:
+        if pause:
+            print("Press Enter to exit...")
+        print("Terminated")
+        exit(0)
+    elif pause:
+        input("Press Enter to continue...")
+    return
+
+def get_number_in_range(number, min_=None, max_=None):
+    """If number is outside the range of min/max, the min/max it exceeds is
+    returned, if not the number is returned.
+
+    number - The middle number | integer
+    min_ - Minimum possible number | integer
+        / If not given, no minimum is set.
+    max_ - Maximum possible number | integer
+        / If not given, no maximum is set.
+
+    """
+    logger = getLogger(pdname+"."+__name__+".get_number_in_range")
+    logger.debug("Call to get_number_in_range.")
+    logger.debug("Args given: {0}, {1}, {2}".format(number, min_, max_))
+    if min_ is None and max_ is None:
+        raise TypeError("get_number_in_range expected 2 arguments, got 1")
+    elif min_ is not None and max_ is None:
+        return max([min_, number])
+    elif max_ is not None and min_ is None:
+        return min([max_, number])
+    else:
+        return max([min_, min([max_, number])])
+
+def get_git_commit_hash(version="long"):
+    """Get git commit hash
+
+    version - either long or short | string
+        / Defaults to long
+
+    """
+    if version == "long":
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().replace("\n", "")
+    elif version == "short":
+        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().replace("\n", "")
+    else:
+        raise ValueError("Invalid arg for version.")
+
+class Tools():
+    """General Class Tools."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialization."""
+        getLogger(pdname+"."+__name__+".Tools.__init__").debug("Tools Class called")
+        self.args = args
+        self.kwargs = kwargs
+        return
+
+
+class Thread_tools(Tools, Thread):
+    """Threading Class Tools."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialization."""
+        getLogger(pdname+"."+__name__+".Thread_tools.__init__").debug("Thread_tools Class called.")
+        Thread.__init__(self)
+        Tools.__init__(self, *args, **kwargs)
+        self.autorun()
+        return
+
+    def autorun(self):
+        """Autorun thread if kwargs["run"] is True."""
+        logger = getLogger(pdname+"."+__name__+".Tools.autorun")
+        logger.debug("Autorun called.")
+        if "run" in self.kwargs and self.kwargs["run"]:
+            logger.debug("Autorunning.")
+            self.start()
+        return
+
+
+
+
+
 
 
 if __name__ == '__main__':

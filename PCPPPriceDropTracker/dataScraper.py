@@ -19,7 +19,7 @@ def scraper(country="uk", *args, **kwargs):
     country - A country code supported by PCPP | string
 
     """
-    logger = getLogger(__name__+".Scraper")
+    logger = getLogger(pdname+"."+__name__+".Scraper")
     logger.debug("Data Scraper initalized.")
     if country not in ["au", "be", "ca", "de", "es", "fr",
                        "in", "it", "nz", "uk", "us"]:
