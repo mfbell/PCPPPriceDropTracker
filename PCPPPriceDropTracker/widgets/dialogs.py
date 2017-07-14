@@ -5,7 +5,7 @@ import tkinter.ttk as ttk
 from logging import getLogger
 from os.path import basename
 
-from tools import Tools, pdname, main
+from tools import Tools, pdname, main, CallbackWithArgs
 from .customWidgets import Panel, ScrollablePanel
 
 
@@ -29,12 +29,19 @@ class OpenDB(Panel):
             self.info_title = ttk.Label(self, text="Open database...")
             self.info_title.grid(column=0, row=0)
 
+        self.text = ttk.Label(self, text="Open a database...")
+
         self.list = FileList(self, paths=resent)
 
+        self.text.grid(column=0, row=1)
         self.list.grid(column=0, row=2)
 
         logger.debug("OpenDB setup complete.")
         return
+
+class EntryPressCB(CallbackWithArgs):
+    def call(self, event):
+        print("pressed "+self.kwargs["path"])
 
 
 class FileList(Panel):
@@ -46,70 +53,54 @@ class FileList(Panel):
         logger.debug("FileList initalization.")
         super().__init__(root, *args, **kwargs)
         self.scrollable_panel = ScrollablePanel(self.root)
-        self.grid()
-
-
-
-        s = ttk.Style()
-        s.configure('mouseover.TFrame',
-                    background='black',)
-        s.map('mouseover.TFrame',
-              foreground=[('disabled', 'yellow'),
-                          ('pressed', 'red'),
-                          ('active', 'blue')],
-              background=[('disabled', 'magenta'),
-                          ('pressed', '!focus', 'cyan'),
-                          ('active', 'green')],
-              relief=[('pressed', 'groove'),
-                      ('!pressed', 'ridge')])
-
-        s.configure('mouseover.TLabel',
-                    background='black',
-                    foreground='white',
-                    highlightthickness='20',
-                    font=('Helvetica', 10))
-        s.map('mouseover.TLabel',
-              foreground=[('disabled', 'yellow'),
-                          ('pressed', 'red'),
-                          ('active', 'blue')],
-              background=[('disabled', 'magenta'),
-                          ('pressed', '!focus', 'cyan'),
-                          ('active', 'green')],
-              highlightcolor=[('focus', 'green'),
-                              ('!focus', 'red')],
-              relief=[('pressed', 'groove'),
-                      ('!pressed', 'ridge')])
-
-        self.entries = []
-        for path in paths:
-            self.add(path)
-
-        # Temp for development
-        if not self.entries:
-            self.add("No entries")
+        self.build(paths)
 
         logger.debug("Filelist setup complete.")
         return
 
-    def add(self, path):
-        """Add an entry to entries."""
-        entry = {}
-        entry["path"] = path
-        entry["frame"] = ttk.Frame(self.scrollable_panel.scrollwindow,
-                                   padding=(6),
-                                   style="mouseover.TFrame")
-        entry["lname"] = ttk.Label(entry["frame"], text=basename(path), style="mouseover.TLabel")
-        entry["lpath"] = ttk.Label(entry["frame"], text=path, style="mouseover.TLabel")
-
-        entry["frame"].grid(column=0, row=len(self.entries), sticky="enw")
-        entry["lname"].grid(column=0, row=0, sticky="nw")
-        entry["lpath"].grid(column=0, row=1, sticky="nw")
-
-        self.entries.append(entry)
+    def build(self, paths):
+        s = ttk.Style()
+        s.map("FileEntry.TFrame",
+              foreground=[("pressed", "red"), ("active", "blue")],
+              background=[("pressed", "!disabled", "black"), ("active", "white")]
+              )
+        self.entries = []
+        for path in paths:
+            e = FileEntry(self, path, EntryPressCB(path=path), padding=6, style="FileEntry.TFrame")
+            e.grid(column=0, row=len(self.entries), sticky="nsw")
+            self.entries.append(e)
         return
 
     def grid(self, *args, **kwargs):
+        super().grid()
         self.scrollable_panel.grid(*args, **kwargs)
+
+
+class FileEntry(Panel):
+    """"""
+
+    def __init__(self, root, path, callback, name_style="TLabel",
+                 path_style="TLabel", *args, **kwargs):
+        """Return a file entry panel."""
+        super().__init__(root, *args, **kwargs)
+        self.path = path
+        self.callback = callback
+        self.name_style = name_style
+        self.path_style = path_style
+        self.lname = ttk.Label(self, text=basename(path), style=self.name_style)
+        self.lpath = ttk.Label(self, text=path, style=self.path_style)
+
+        self.lname.grid(column=0, row=0, sticky="nw")
+        self.lpath.grid(column=0, row=1, sticky="nw")
+
+        self.bind("<Button-1>", self.callback)
+        self.lname.bind("<Button-1>", self.callback)
+        self.lpath.bind("<Button-1>", self.callback)
+        return
+
+
+
+
 
 
 if __name__ == '__main__':
