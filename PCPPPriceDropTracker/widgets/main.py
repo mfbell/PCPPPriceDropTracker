@@ -105,6 +105,9 @@ class App(Panel):
         else:
             return a
 
+    def mainloop(self, *args, **kw):
+        self.root.mainloop(*args, **kw)
+
 
 class Title_Panel(Panel):
     """Title panel."""
