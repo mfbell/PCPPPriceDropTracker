@@ -10,7 +10,7 @@ from time import time
 from logging import getLogger
 
 from errors import UnknownCountryError
-from tools import main
+from tools import main, pdname
 
 
 def scraper(country="uk", *args, **kwargs):
