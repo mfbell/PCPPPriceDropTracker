@@ -279,7 +279,7 @@ class CallbackWithArgs(Tools):
     For example Tkinter's bind, where you can not use lambda as the callback
     passes the arg event.
     To use, subclass CallbackWithArgs and write a method named call with the
-    args self and event.
+    self, non-positional arguments and possitional argument perimitors.
     To then impliment, call the class. Passesing any args or kwargs you want to
     be able to access in call. These are available from call under list
     self.args and dictionary self.kwargs with the keyword been the key.
@@ -289,11 +289,12 @@ class CallbackWithArgs(Tools):
         super().__init__(*args, **kwargs)
         return
 
-    def __call__(self, event):
-        self.call(event)
+    def __call__(self, *a, **kw):
+        self.call(*a, **kw)
 
-    def call(self, event):
-        print(event)
+    def call(self, *a, **kw):
+        print(*a)
+        print(**kw)
 
 
 if __name__ == '__main__':
