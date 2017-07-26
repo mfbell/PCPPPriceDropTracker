@@ -1,7 +1,7 @@
 """PCPPPriceDropTracker main GUI widgets."""
 
 import tkinter as tk
-import tkinter.ttk as ttk
+from tkinter import ttk
 from logging import getLogger
 
 from DBHandler import Handler
@@ -82,11 +82,6 @@ class App(Panel):
         #self.left_bar.grid(column=7, row=2, sticky="ns", padx=(6), pady=(3))
         logger.debug("App setup complete.")
         logger.info("PCPPPriceDropTracker GUI is running")
-
-
-        self.opendbd = OpenDB(resent=["X:\coding\projects\PCPPPriceDropTracker\PCPPPriceDropTracker\widgets\main.py",
-                                      "X:\coding\projects\PCPPPriceDropTracker\PCPPPriceDropTracker\widgets\dialogs.py",
-                                      "X:\coding\projects\PCPPPriceDropTracker\PCPPPriceDropTracker\widgets\customWidgets.py"])
         return
 
     def add_filter(self):
@@ -403,8 +398,8 @@ class Menu_Bar(Tools):
 
         # Drop downs
         self.file_menu = tk.Menu(self.menu)
-        self.file_menu.add_command(label="Open...", command=mp)
-        self.file_menu.add_command(label="Close.", command=mp)
+        self.file_menu.add_command(label="Open database", command=mp)
+        self.file_menu.add_command(label="Close", command=mp)
         #
         self.edit_menu = tk.Menu(self.menu)
         self.edit_menu.add_command(label="Change country", command=mp)
@@ -440,7 +435,7 @@ class Update_Hanlder(Tools):
         self.msg_box = MessageBox(msg=self.text,
                                   buttons={"1":[self.button, "WITHDRAW"]},
                                   title="Updating",
-                                  icon=".\PCPPPriceDropTracker\imgs\info_icon.png")
+                                  icon=".\PCPPPriceDropTracker\imgs\info.png")
         logger.debug("Popup created.")
         return
 

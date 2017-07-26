@@ -7,13 +7,15 @@ All widgets use the grid manager.
 """
 
 import tkinter as tk
-import tkinter.ttk as ttk
+from tkinter import ttk, filedialog
 from PIL import ImageTk, Image
 from logging import getLogger
+from os.path import basename
 
-from tools import Tools, Thread_tools, get_number_in_range, pdname
-from tools import main as mainprint
+from tools import Tools, Thread_tools, get_number_in_range, pdname, main
 
+__all__ = ["Panel", "MessageBox", "ScrollablePanel", "AutoScrollbar", "FileList",
+           "FileEntry", "FilePathEntry"]
 
 class _Limitation():
     """Some methods to inherit to limit functions/explain error."""
@@ -416,12 +418,90 @@ class AutoScrollbar(ttk.Scrollbar, _Limitation):
         return
 
 
-def main():
-    mainprint(__doc__, xit=False)
-    mb = MessageBox(msg=["Updating...", "This is my really long message for a MessageBox"], buttons={"ok":["OK", lambda: print("OK")]}, title="Updating")
-    mb.mainloop()
-    return
+class FileList(ScrollablePanel):
+    """"""
+
+    def __init__(self, root, callback, paths=[], *args, **kwargs):
+        """"""
+        logger = getLogger(pdname+"."+__name__+".FileList")
+        logger.debug("FileList initalization.")
+        super().__init__(root, *args, **kwargs)
+        self.callback = callback
+        self.build(paths)
+
+        logger.debug("Filelist setup complete.")
+        return
+
+    def build(self, paths):
+        self.scrollwindow.entries = []
+        for path in paths:
+            e = FileEntry(self.scrollwindow, path, callback=self.callback, takefocus=True, padding=3, relief="groove")
+            e.grid(column=0, row=len(self.scrollwindow.entries), sticky="new", pady=2, padx=6)
+            self.scrollwindow.entries.append(e)
+        return
+
+
+class FileEntry(Panel):
+    """"""
+
+    def __init__(self, root, path, callback, name_style="TLabel", path_style="TLabel", *args, **kwargs):
+        """Return a file entry panel."""
+        super().__init__(root, *args, **kwargs)
+        self.path = path
+        self.name_style = name_style
+        self.path_style = path_style
+        self.callback_ = callback
+        self.lname = ttk.Label(self, text=basename(path), style=self.name_style, padding=2)
+        self.lpath = ttk.Label(self, text=path, style=self.path_style, padding=2)
+
+        self.lname.grid(column=0, row=0, sticky="nw")
+        self.lpath.grid(column=0, row=1, sticky="nw")
+
+        self.bind("<Button-1>", self.callback)
+        self.lname.bind("<Button-1>", self.callback)
+        self.lpath.bind("<Button-1>", self.callback)
+
+    def callback(self, event):
+        self.callback_(path=self.path, event=event)
+
+
+class FilePathEntry(Panel):
+    """"""
+
+    def __init__(self, root, callback, *args, **kwargs):
+        """"""
+        super().__init__(root, *args, **kwargs)
+        self.callback_ = callback
+        self.path = tk.StringVar()
+        self.entry = ttk.Entry(self, textvariable=self.path)
+        self.find_button = ttk.Button(self, text="...", command=self.askopenfilename, width=2)
+        self.open_button = ttk.Button(self, text="Open", command=self.callback)
+
+        self.entry.grid(column=0, row=0, sticky="we")
+        self.find_button.grid(column=1, row=0)
+        self.open_button.grid(column=2, row=0)
+
+        self.grid_columnconfigure(0, weight=1)
+
+        return
+
+
+    def askopenfilename(self):
+        path = filedialog.askopenfilename()
+        if not path:
+            return
+        else:
+            self.path.set(path)
+            self.callback()
+
+
+    def callback(self):
+        path = self.path.get()
+        if not path:
+            self.askopenfilename()
+        else:
+            self.callback_(path=path)
 
 
 if __name__ == "__main__":
-    main()
+    main(__doc__)
