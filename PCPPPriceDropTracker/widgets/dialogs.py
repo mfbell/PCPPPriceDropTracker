@@ -52,7 +52,7 @@ class CreateDB(_PathDialog):
         self.grid_columnconfigure(0, weight = 1)
 
         # Side options
-        self.options = ttk.Frame(self, padding=3)
+        self.options = ttk.Frame(self, padding = 3)
         self.options.create = ttk.Button(self.options, text = "Open", command = self.change_to_open_dialog)
         self.options.cancel = ttk.Button(self.options, text = "Cancel", command = self.cancel)
         self.options.create.grid(column = 0, row = 0, pady = (3, 0))
@@ -99,7 +99,7 @@ class OpenDB(_PathDialog):
             self.list.grid(column = 0, row = 5)
 
         # Side options
-        self.options = ttk.Frame(self, padding=3)
+        self.options = ttk.Frame(self, padding = 3)
         self.options.create = ttk.Button(self.options, text = "New", command = self.change_to_create_dialog)
         self.options.cancel = ttk.Button(self.options, text = "Cancel", command = self.cancel)
         self.options.create.grid(column = 0, row = 0, pady = (3, 0))

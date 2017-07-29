@@ -8,11 +8,11 @@ from logging import getLogger
 class Error(Exception):
     """General Error class."""
 
-    def __init__(self, msg=None, *args, **kwargs):
+    def __init__(self, msg = None, *args, **kwargs):
         """Error Raising."""
         if not msg:
             msg = self.__doc__
-        getLogger(pdname+"."+__name__).exception("Exception raised: {0}".format(msg))
+        getLogger(pdname + "." + __name__).exception("Exception raised: {0}".format(msg))
         super().__init__(msg)
         self.msg = msg
         self.args = args

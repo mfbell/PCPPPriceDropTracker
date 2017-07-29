@@ -13,13 +13,13 @@ from errors import UnknownCountryError
 from tools import main, pdname
 
 
-def scraper(country="uk", *args, **kwargs):
+def scraper(country, *args, **kwargs):
     """The data scraper and parser.
 
     country - A country code supported by PCPP | string
 
     """
-    logger = getLogger(pdname+"."+__name__+".Scraper")
+    logger = getLogger(pdname + "." + __name__ + ".Scraper")
     logger.debug("Data Scraper initalized.")
     if country not in ["au", "be", "ca", "de", "es", "fr",
                        "in", "it", "nz", "uk", "us"]:
@@ -30,7 +30,7 @@ def scraper(country="uk", *args, **kwargs):
     items = []
     secton_header = soup.find("tr")
     try:
-        catagorties = soup.find(class_="left-column").find("ul").get_text().strip().split("\n")
+        catagorties = soup.find(class_ = "left-column").find("ul").get_text().strip().split("\n")
         logger.debug("Catagorties found: {0}".format(catagorties))
     except AttributeError:
         logger.debug("No entries found.")

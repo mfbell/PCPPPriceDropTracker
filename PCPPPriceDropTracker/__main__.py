@@ -14,7 +14,7 @@ from tools import pdname
 def main(args=None):
     """The main routine."""
     setup()
-    logger = getLogger(pdname+"."+__name__+".main")
+    logger = getLogger(pdname + "." + __name__ + ".main")
     logger.debug("Logging setup. Main called, calling and running App")
     app = App()
     app.mainloop()

@@ -4,25 +4,6 @@ Contains the main tools for PCPPPriceDropTracker.
 
 """
 
-"""Tools for PCPPPriceDropTracker.
-
-"""
-
-__all__ = ["main",
-           "get_number_in_range",
-           "get_git_commit_hash",
-           "Tools",
-           "Thread_tools",
-           "CallbackOnEditDict",
-           "SelfSavingDict",
-           "CallbackWithArgs"
-           # PDH
-           "PDHandler",
-           "PDPath",
-           "PD",
-           "pdname",
-           "config"]
-
 import os
 import sys
 import subprocess
@@ -30,6 +11,10 @@ import json
 from time import time
 from threading import Thread
 from logging import getLogger
+
+__all__ = ["main", "get_number_in_range", "get_git_commit_hash", "Tools",
+           "Thread_tools", "CallbackOnEditDict", "SelfSavingDict",
+           "CallbackWithArgs", "PDHandler", "PDPath", "PD", "pdname", "config"]
 
 # Data type classes
 class CallbackOnEditDict(dict):
@@ -45,8 +30,8 @@ class CallbackOnEditDict(dict):
 
     """
 
-    def __init__(self, convert=None, callback=None, *a, **kw):
-        #getLogger(pdname+"."+__name__+".CallbackOnEditDict.__init__").debug("CallbackOnEditDict initialized.")
+    def __init__(self, convert = None, callback = None, *a, **kw):
+        #getLogger(pdname + "." + __name__ + ".CallbackOnEditDict.__init__").debug("CallbackOnEditDict initialized.")
         if callback is None:
             raise TypeError("CallbackOnEditDict expected function for callback.")
         if not callable(callback):
@@ -58,8 +43,8 @@ class CallbackOnEditDict(dict):
             self.convert(convert)
         return
 
-    def callback(self, condition=None):
-        #getLogger(pdname+"."+__name__+".CallbackOnEditDict.callback").debug("Callback called, {0}?, con: {0}".format(not self.setup_mode, condition))
+    def callback(self, condition = None):
+        #getLogger(pdname + "." + __name__ + ".CallbackOnEditDict.callback").debug("Callback called, {0}?, con: {0}".format(not self.setup_mode, condition))
         if self.setup_mode is not True:
             if condition == "set":
                 self.convert()
@@ -100,7 +85,7 @@ class CallbackOnEditDict(dict):
         self.callback("set")
         return
 
-    def convert(self, d=None):
+    def convert(self, d = None):
         """Convert nested dictionaries into CallbackOnEditDict dictionaries.
 
         d - The dictionaries to convert and add to self | Dictionary
@@ -112,7 +97,7 @@ class CallbackOnEditDict(dict):
         self.setup_mode = True
         for k in d:
             if isinstance(d[k], dict):
-                self[k] = CallbackOnEditDict(convert=d[k], callback=self._passed_callback)
+                self[k] = CallbackOnEditDict(convert = d[k], callback = self._passed_callback)
             else:
                 self[k] = d[k]
         self.setup_mode = False
@@ -133,13 +118,13 @@ class SelfSavingDict(CallbackOnEditDict):
             path = input("PATH:")
         self.path = path
         with open(self.path, "r") as f:
-            super().__init__(convert=json.load(f), callback=self.save)
+            super().__init__(convert = json.load(f), callback = self.save)
         return
 
     def save(self):
         """Auto-saving callback method."""
         with open(self.path, "w") as f:
-            json.dump(self, f, indent=2)
+            json.dump(self, f, indent = 2)
         return
 
 # Project data handling
@@ -153,7 +138,7 @@ class PDHandler(SelfSavingDict):
 
     """
 
-    def __init__(self, path=PDPath):
+    def __init__(self, path = PDPath):
         """Initialization
 
         path - Path of project data | string
@@ -170,7 +155,7 @@ pdname = PD["project"]["name"]
 config = PDHandler(path = PD["project"]["config_file"])
 
 # Other tools
-def main(doc=None, itu=None, pause=True, xit=True):
+def main(doc = None, itu = None, pause = True, xit = True):
     """Module run as main function.
 
     doc - Either docstring or info to print | string
@@ -205,7 +190,7 @@ def main(doc=None, itu=None, pause=True, xit=True):
         input("Press Enter to continue...")
     return
 
-def get_number_in_range(number, min_=None, max_=None):
+def get_number_in_range(number, min_ = None, max_ = None):
     """If number is outside the range of min/max, the min/max it exceeds is
     returned, if not the number is returned.
 
@@ -216,7 +201,7 @@ def get_number_in_range(number, min_=None, max_=None):
         / If not given, no maximum is set.
 
     """
-    logger = getLogger(pdname+"."+__name__+".get_number_in_range")
+    logger = getLogger(pdname + "." + __name__ + ".get_number_in_range")
     logger.debug("Call to get_number_in_range.")
     logger.debug("Args given: {0}, {1}, {2}".format(number, min_, max_))
     if min_ is None and max_ is None:
@@ -228,7 +213,7 @@ def get_number_in_range(number, min_=None, max_=None):
     else:
         return max([min_, min([max_, number])])
 
-def get_git_commit_hash(version="long"):
+def get_git_commit_hash(version = "long"):
     """Get git commit hash
 
     version - either long or short | string
@@ -247,7 +232,7 @@ class Tools():
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
-        getLogger(pdname+"."+__name__+".Tools.__init__").debug("Tools Class called")
+        getLogger(pdname + "." + __name__ + ".Tools.__init__").debug("Tools Class called")
         self.args = args
         self.kwargs = kwargs
         return
@@ -258,7 +243,7 @@ class Thread_tools(Tools, Thread):
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
-        getLogger(pdname+"."+__name__+".Thread_tools.__init__").debug("Thread_tools Class called.")
+        getLogger(pdname + "." + __name__ + ".Thread_tools.__init__").debug("Thread_tools Class called.")
         Thread.__init__(self)
         Tools.__init__(self, *args, **kwargs)
         self.autorun()
@@ -266,7 +251,7 @@ class Thread_tools(Tools, Thread):
 
     def autorun(self):
         """Autorun thread if kwargs["run"] is True."""
-        logger = getLogger(pdname+"."+__name__+".Tools.autorun")
+        logger = getLogger(pdname + "." + __name__ + ".Tools.autorun")
         logger.debug("Autorun called.")
         if "run" in self.kwargs and self.kwargs["run"]:
             logger.debug("Autorunning.")

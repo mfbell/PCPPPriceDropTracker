@@ -9,6 +9,7 @@ import os
 
 from tools import main, get_git_commit_hash, pdname
 
+
 DATETIME = strftime("%Y-%m-%d %H-%M-%S")
 LOG_DIR = ".\logs"
 LOG_FILE_FIRST_LINE = """PCPPPriceDropTracker Log File
@@ -17,6 +18,7 @@ Commit Version: {0} ({1})
 //Credits here//
 
 """.format(get_git_commit_hash("short"), get_git_commit_hash())
+
 LOG_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
