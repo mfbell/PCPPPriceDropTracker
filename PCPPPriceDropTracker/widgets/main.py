@@ -5,9 +5,9 @@ from tkinter import ttk
 from logging import getLogger
 
 from DBHandler import Handler
-from tools import Tools, PD, pdname
+from tools import Tools, PD, pdname, PDHandler, config
 from .customWidgets import Panel, MessageBox, ScrollablePanel
-from .dialogs import OpenDB
+from .dialogs import OpenDB, CreateDB
 
 __all__ = ["App"]
 
@@ -15,26 +15,21 @@ class App(Panel):
     """The main window."""
 
     def __init__(self, root=tk.Tk(), *args, **kwargs):
-        """Initialization.
-
-        Args as of Panel
-        + kwargs:
-        db_handler - Database handler object | object
-
-        """
+        """Initialization."""
         logger = getLogger(pdname+"."+__name__+".App.__init__")
         logger.debug("App initalization.")
-        if "db_handler" in kwargs:
-            self.db_handler = kwargs["db_handler"]
-            del(kwargs["db_handler"])
-        else:
-            self.db_handler = False
         if not "padding" in kwargs:
             kwargs["padding"] = (12, 6, 6, 6)
         super().__init__(root, *args, **kwargs)
         self.grid()
-        if not self.db_handler:
-            self.db_handler = Handler()
+        self.root.withdraw()
+        OpenDB(resent=config["databases"]["resent"], callback=self.finish_setup)
+
+    def finish_setup(self, path, *a, **kw):
+        logger = getLogger(pdname+"."+__name__+".App.__init__")
+        logger.debug("App initalization.")
+        self.root.deiconify()
+        self.db_handler = Handler(path=path, country="uk")
 
         # Window setup
         self.root.title("PCPPPriceDropTracker {0}".format(PD["project"]["version"]))

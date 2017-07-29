@@ -93,52 +93,52 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
         Tools.__init__(self, *args, **kwargs)
 
         # mainframe of padding
-        self.main = ttk.Frame(self, padding=6)
+        self.main = ttk.Frame(self, padding = 6)
         self.main.grid()
 
         # messages
         self.msgs = []
         for m in msg:
             if isinstance(m, type(tk.StringVar())):
-                self.msgs.append(ttk.Label(self.main, textvariable=m))
+                self.msgs.append(ttk.Label(self.main, textvariable = m))
                 print("adding msg: " + m.get())
             else:
-                self.msgs.append(ttk.Label(self.main, text=m))
+                self.msgs.append(ttk.Label(self.main, text = m))
         c = 4
         for m in self.msgs:
-            m.grid(column=4, row=c, padx=3)
-            c += 1
+            m.grid(column = 4, row = c, padx = 3)
+            c +=  1
         # icon
         if icon_path:
             try:
                 self.icon_image = ImageTk.PhotoImage(Image.open(icon_path).resize((48, 48), Image.ANTIALIAS))
-                self.icon = ttk.Label(self.main, image=self.icon_image)
+                self.icon = ttk.Label(self.main, image = self.icon_image)
             except FileNotFoundError:
-                self.icon = ttk.Label(self.main, text="Failed to\nLoad Icon")
+                self.icon = ttk.Label(self.main, text = "Failed to\nLoad Icon")
                 logger.exception("FileNotFoundError while adding icon.")
-            self.icon.grid(column=2, row=4, rowspan=c-4, pady=6, padx=6)
+            self.icon.grid(column = 2, row = 4, rowspan = c-4, pady = 6, padx = 6)
 
         # Splitter
-        self.bar = ttk.Separator(self.main, orient="horizontal")
-        self.bar.grid(column=0, columnspan=99, row=c+1, sticky="ew", pady=6)
+        self.bar = ttk.Separator(self.main, orient = "horizontal")
+        self.bar.grid(column = 0, columnspan = 99, row = c+1, sticky = "ew", pady = 6)
         # buttons
         self.buttons = {}
         self.button_frame = ttk.Frame(self.main)
-        self.button_frame.grid(column=4, row=c+2, sticky="e")
+        self.button_frame.grid(column = 4, row = c+2, sticky = "e")
         c = 0
         for b in buttons:
-            if buttons[b][1] == "KILL":
+            if buttons[b][1]  ==  "KILL":
                 buttons[b][1] = self.destroy
-            elif buttons[b][1] == "ICONIFY":
+            elif buttons[b][1]  ==  "ICONIFY":
                 buttons[b][1] = self.iconify
-            elif buttons[b][1] == "WITHDRAW":
+            elif buttons[b][1]  ==  "WITHDRAW":
                 buttons[b][1] = self.withdraw
             if isinstance(buttons[b][0], type(tk.StringVar())):
-                self.buttons[b] = ttk.Button(self.button_frame, textvariable=buttons[b][0], command=buttons[b][1])
+                self.buttons[b] = ttk.Button(self.button_frame, textvariable = buttons[b][0], command = buttons[b][1])
             else:
-                self.buttons[b] = ttk.Button(self.button_frame, text=buttons[b][0], command=buttons[b][1])
-            self.buttons[b].grid(column=c, row=0)
-            c +=1
+                self.buttons[b] = ttk.Button(self.button_frame, text = buttons[b][0], command = buttons[b][1])
+            self.buttons[b].grid(column = c, row = 0)
+            c += 1
         if ("focus" in self.kwargs and self.kwargs["focus"]) or "focus" not in self.kwargs:
             self.focus_set()
         if "grab" in kwargs and kwargs["grab"]:
@@ -198,30 +198,30 @@ class ScrollablePanel(Panel, _Limitation):
         else:
             self._sizes["min_height"] = None
         if "auto_hide_scrollbars" in kwargs:
-            self.auto_hide_scrollbars = kwargs["auto_hide_scrollbars"] if kwargs["max_width"] >= 32 else 32
+            self.auto_hide_scrollbars = kwargs["auto_hide_scrollbars"] if kwargs["max_width"] >=  32 else 32
             del(kwargs["auto_hide_scrollbars"])
         else:
             self.auto_hide_scrollbars = True
         super().__init__(root, *args, **kwargs)
 
-        self.xscrlbr = AutoScrollbar(self, orient="horizontal", name="ybar",
-                                     show_callback=self._bind_x,
-                                     hide_callback=self._unbind_x)
-        self.yscrlbr = AutoScrollbar(self, orient="vertical", name="xbar",
-                                     show_callback=self._bind_y,
-                                     hide_callback=self._unbind_y)
+        self.xscrlbr = AutoScrollbar(self, orient = "horizontal", name = "ybar",
+                                     show_callback = self._bind_x,
+                                     hide_callback = self._unbind_x)
+        self.yscrlbr = AutoScrollbar(self, orient = "vertical", name = "xbar",
+                                     show_callback = self._bind_y,
+                                     hide_callback = self._unbind_y)
         self.canvas = tk.Canvas(self)
-        self.canvas.config(relief="flat", width=20, heigh=20, bd=2)
-        self.xscrlbr.config(command=self.canvas.xview)
-        self.yscrlbr.config(command=self.canvas.yview)
+        self.canvas.config(relief = "flat", width = 20, heigh = 20, bd = 2)
+        self.xscrlbr.config(command = self.canvas.xview)
+        self.yscrlbr.config(command = self.canvas.yview)
         self.scrollwindow = ttk.Frame(self.canvas)
-        self.canvas.create_window(0, 0, window=self.scrollwindow, anchor="nw")
+        self.canvas.create_window(0, 0, window = self.scrollwindow, anchor = "nw")
         self.canvas.config(xscrollcommand = self.xscrlbr.set,
                          yscrollcommand = self.yscrlbr.set,
                          scrollregion = (0, 0, 10, 10))
-        self.xscrlbr.grid(column=0, row=1, sticky="ew") #, columnspan=2)
-        self.yscrlbr.grid(column=1, row=0, sticky="ns")
-        self.canvas.grid(column=0, row=0, sticky="nswe")
+        self.xscrlbr.grid(column = 0, row = 1, sticky = "ew") #, columnspan = 2)
+        self.yscrlbr.grid(column = 1, row = 0, sticky = "ns")
+        self.canvas.grid(column = 0, row = 0, sticky = "nswe")
         self.yscrlbr.lift(self.scrollwindow)
         self.xscrlbr.lift(self.scrollwindow)
 
@@ -299,13 +299,13 @@ class ScrollablePanel(Panel, _Limitation):
         logger.debug("Update widgets.")
         size = (self.scrollwindow.winfo_reqwidth(), self.scrollwindow.winfo_reqheight())
         logger.debug("Current size %s", size)
-        self.canvas.config(scrollregion=self.canvas.bbox("all"))
-        if self.scrollwindow.winfo_reqwidth() != self.canvas.winfo_width():
+        self.canvas.config(scrollregion = self.canvas.bbox("all"))
+        if self.scrollwindow.winfo_reqwidth() !=  self.canvas.winfo_width():
             # update the canvas"s width to fit the inner frame
-            self.canvas.config(width=self._size_cal("width"))
-        if self.scrollwindow.winfo_reqheight() != self.canvas.winfo_height():
+            self.canvas.config(width = self._size_cal("width"))
+        if self.scrollwindow.winfo_reqheight() !=  self.canvas.winfo_height():
             # update the canvas"s width to fit the inner
-            self.canvas.config(height=self._size_cal("height"))
+            self.canvas.config(height = self._size_cal("height"))
         return
 
     def _size_cal(self, dimension, *args, **kwargs):
@@ -321,11 +321,11 @@ class ScrollablePanel(Panel, _Limitation):
         if self.sizes("min_" + dimension) is None and self.sizes("max_" + dimension) is None:
             return needed # No need to remove scrollbar space as there is no set size.
         elif self.sizes("min_" + dimension) is None and self.sizes("max_" + dimension):
-            return get_number_in_range(needed, max_=self.sizes("max_" + dimension) - scrollbar)
+            return get_number_in_range(needed, max_ = self.sizes("max_" + dimension) - scrollbar)
         elif self.sizes("max_" + dimension) is None and self.sizes("min_" + dimension):
-            return get_number_in_range(needed, min_=self.sizes("min_" + dimension) - scrollbar)
+            return get_number_in_range(needed, min_ = self.sizes("min_" + dimension) - scrollbar)
         else:
-            return get_number_in_range(needed, min_=self.sizes("min_" + dimension) - scrollbar, max_=self.sizes("max_" + dimension) - scrollbar)
+            return get_number_in_range(needed, min_ = self.sizes("min_" + dimension) - scrollbar, max_ = self.sizes("max_" + dimension) - scrollbar)
 
     def _get_dimensions(self, dimension):
         """Get needed size of scrollwindow and size of scrollbar.
@@ -334,15 +334,15 @@ class ScrollablePanel(Panel, _Limitation):
 
         """
         getLogger(pdname+"."+__name__+".ScrollablePanel._get_dimensions").debug("_get_dimensions called.")
-        if dimension == "width":
+        if dimension  ==  "width":
             return self.scrollwindow.winfo_reqwidth(), self.yscrlbr.winfo_width() if not "disabled" in self.yscrlbr.state() else 0
-        elif dimension == "height":
+        elif dimension  ==  "height":
             return self.scrollwindow.winfo_reqheight(), self.xscrlbr.winfo_height() if not "disabled" in self.xscrlbr.state() else 0
         else:
             raise ValueError("Invalid value for dimension: {0}".format(dimension))
         return
 
-    def sizes(self, size=None):
+    def sizes(self, size = None):
         """Return filtered dimension given when object was called.
 
         Filtered been, if dimension given was below 32, 32 is return.
@@ -355,16 +355,16 @@ class ScrollablePanel(Panel, _Limitation):
             d = {}
             for key in self._sizes:
                 if callable(self._sizes[key]):
-                    d[key] = self._sizes[key]() if self._sizes[key]() >= 32 else 32
+                    d[key] = self._sizes[key]() if self._sizes[key]() >=  32 else 32
                 else:
-                    d[key] = self._sizes[key] if self._sizes[key] is None or self._sizes[key] >= 32 else 32
+                    d[key] = self._sizes[key] if self._sizes[key] is None or self._sizes[key] >=  32 else 32
             return d
         else:
             try:
                 if callable(self._sizes[size]):
-                    return self._sizes[size]() if self._sizes[size]() is None or self._sizes[size]() >= 32 else 32
+                    return self._sizes[size]() if self._sizes[size]() is None or self._sizes[size]() >=  32 else 32
                 else:
-                    return self._sizes[size] if self._sizes[size] is None or self._sizes[size] >= 32 else 32
+                    return self._sizes[size] if self._sizes[size] is None or self._sizes[size] >=  32 else 32
             except KeyError:
                 raise ValueError("Invalid dimension given.")
 
@@ -404,7 +404,7 @@ class AutoScrollbar(ttk.Scrollbar, _Limitation):
         logger = getLogger(pdname+"."+__name__+".AutoScrollbar.set")
         logger.debug("AutoScrollbar Set called with: {0} {1}".format(lo, hi))
         logger.debug("Passed to super")
-        if float(lo) <= 0.0 and float(hi) >= 1.0:
+        if float(lo) <=  0.0 and float(hi) >=  1.0:
             self.grid_remove()
             if self.hide_callback:
                 self.hide_callback()
@@ -419,11 +419,27 @@ class AutoScrollbar(ttk.Scrollbar, _Limitation):
 
 
 class FileList(ScrollablePanel):
-    """"""
+    """Multi-FileEntry widget in a ScrollablePanel.
 
-    def __init__(self, root, callback, paths=[], *args, **kwargs):
-        """"""
-        logger = getLogger(pdname+"."+__name__+".FileList")
+    Each path is given a FileEntry which is call contrained in this object.
+    The path of the pressed widget is passed to the argument 'path' when called.
+
+    FileList.build can be called at anytime to add more FileEntrys.
+    FileList.scrollwindow.entries is the list containing the FileEntry objects.
+
+    """
+
+    def __init__(self, root, callback, paths = [], *args, **kwargs):
+        """Initialization
+
+        root - Master widget | object
+        callback - Function to call when a FileEntry is pressed | Function
+        path - A list of paths | list[str, ...]
+            / Not required
+        Args and kwargs passed to ScrollablePanel.
+
+        """
+        logger = getLogger(pdname + "." + __name__ + ".FileList")
         logger.debug("FileList initalization.")
         super().__init__(root, *args, **kwargs)
         self.callback = callback
@@ -433,75 +449,118 @@ class FileList(ScrollablePanel):
         return
 
     def build(self, paths):
+        """Creation function of FileEntrys
+
+        path - A list of paths | list[str, ...]
+
+        """
         self.scrollwindow.entries = []
         for path in paths:
-            e = FileEntry(self.scrollwindow, path, callback=self.callback, takefocus=True, padding=3, relief="groove")
-            e.grid(column=0, row=len(self.scrollwindow.entries), sticky="new", pady=2, padx=6)
+            e = FileEntry(self.scrollwindow, path, callback = self.callback, takefocus = True, padding = 3, relief = "groove")
+            e.grid(column = 0, row = len(self.scrollwindow.entries), sticky = "new", pady = 2, padx = 6)
             self.scrollwindow.entries.append(e)
         return
 
 
 class FileEntry(Panel):
-    """"""
+    """File path button widget."""
 
-    def __init__(self, root, path, callback, name_style="TLabel", path_style="TLabel", *args, **kwargs):
-        """Return a file entry panel."""
+    def __init__(self, root, path, callback, name_style = "TLabel", path_style = "TLabel", *args, **kwargs):
+        """Initialization
+
+        root - Master widget | object
+        callback - Function to call when pressed | Function
+        path - Path string | String
+        Args and kwargs passed to Panel.
+
+        When pressed the path is passed to the callback argument 'path'.
+
+        """
         super().__init__(root, *args, **kwargs)
         self.path = path
         self.name_style = name_style
         self.path_style = path_style
         self.callback_ = callback
-        self.lname = ttk.Label(self, text=basename(path), style=self.name_style, padding=2)
-        self.lpath = ttk.Label(self, text=path, style=self.path_style, padding=2)
+        self.lname = ttk.Label(self, text = basename(path), style = self.name_style, padding = 2)
+        self.lpath = ttk.Label(self, text = path, style = self.path_style, padding = 2)
 
-        self.lname.grid(column=0, row=0, sticky="nw")
-        self.lpath.grid(column=0, row=1, sticky="nw")
+        self.lname.grid(column = 0, row = 0, sticky = "nw")
+        self.lpath.grid(column = 0, row = 1, sticky = "nw")
 
         self.bind("<Button-1>", self.callback)
         self.lname.bind("<Button-1>", self.callback)
         self.lpath.bind("<Button-1>", self.callback)
 
     def callback(self, event):
-        self.callback_(path=self.path, event=event)
+        self.callback_(path = self.path, event = event)
 
 
 class FilePathEntry(Panel):
-    """"""
+    """File entry widget, old style.
 
-    def __init__(self, root, callback, *args, **kwargs):
-        """"""
+    With entry box, system UI dialog button and action button.
+    If the action button is pressed without there been anything in the entry box
+    the system UI dialog is called.
+    Returning from the system UI dialog with a string triggers a callback.
+
+    The path is given to the callback under the argument 'path'.
+
+    """
+
+    def __init__(self, root, callback, action_text, finder, *args, **kwargs):
+        """Initialization.
+
+        root - Master widget | Object
+        callback - Function to call when path is choosen | Function
+        action_text - Text to display on main button | String
+        finder - System UI dialog to launch | Function or String
+            / Either pass a callable which returns the choosen path on completion
+              Or 'getopenfile', 'getsavefile' or 'choosedirectory' for
+              Tkinter.filedialog options.
+        Args and kwargs passed to Panel.
+
+        """
         super().__init__(root, *args, **kwargs)
         self.callback_ = callback
+        self.action_text = action_text
+        if isinstance(finder, str):
+            if finder.lower()  ==  "getopenfile":
+                self.finder = filedialog.askopenfilename
+            elif finder.lower()  ==  "getsavefile":
+                self.finder = filedialog.asksaveasfilename
+            elif finder.lower()  ==  "choosedirectory":
+                self.finder = filedialog.askdirectory
+            else:
+                raise ValueError("Invalid finder arg.")
+        elif callable(finder):
+            self.finder = finder
+        else:
+            raise ValueError("Invalid finder arg.")
         self.path = tk.StringVar()
-        self.entry = ttk.Entry(self, textvariable=self.path)
-        self.find_button = ttk.Button(self, text="...", command=self.askopenfilename, width=2)
-        self.open_button = ttk.Button(self, text="Open", command=self.callback)
-
-        self.entry.grid(column=0, row=0, sticky="we")
-        self.find_button.grid(column=1, row=0)
-        self.open_button.grid(column=2, row=0)
-
-        self.grid_columnconfigure(0, weight=1)
-
+        self.entry = ttk.Entry(self, textvariable = self.path)
+        self.find_button = ttk.Button(self, text = "...", command = self.ask, width = 2)
+        self.open_button = ttk.Button(self, text = action_text, command = self.callback)
+        self.entry.grid(column = 0, row = 0, sticky = "we")
+        self.find_button.grid(column = 1, row = 0)
+        self.open_button.grid(column = 2, row = 0)
+        self.grid_columnconfigure(0, weight = 1)
         return
 
-
-    def askopenfilename(self):
-        path = filedialog.askopenfilename()
+    def ask(self):
+        path = self.finder()
         if not path:
             return
         else:
             self.path.set(path)
             self.callback()
 
-
     def callback(self):
         path = self.path.get()
         if not path:
-            self.askopenfilename()
+            self.ask()
         else:
-            self.callback_(path=path)
+            self.callback_(path = path, event = self.finder)
 
 
-if __name__ == "__main__":
+if __name__  ==  "__main__":
     main(__doc__)
