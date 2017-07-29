@@ -12,10 +12,13 @@ from errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
 from tools import main, Tools, Thread_tools, pdname
 from dataScraper import scraper
 
+
+COUNTRIES = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us", None]
+
 class Handler(Tools):
     """The database handler."""
 
-    def __init__(self, path=".\pcpp_offers.sqlite3", country="uk", *args, **kwargs):
+    def __init__(self, path, country=None, *args, **kwargs):
         """Initialization.
 
         path - Database file path | string
@@ -26,22 +29,40 @@ class Handler(Tools):
         """
         logger = getLogger(pdname+"."+__name__+".Handler.__init__")
         logger.debug("Database handler initalization.")
-        self.path = path
-        countries = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us"]
-        if country not in countries:
-            raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)))
-        self.country = country
         super().__init__(*args, **kwargs)
+        self.path = path
+        self.country = country
+        if self.country not in COUNTRIES:
+            raise UnknownCountryError("PCPP does not support the country {0}. Try: {1}".format(country, ", ".join(countries)))
         self.open()
         self.first_setup()
         logger.debug("Database handler setup complete.")
         return
 
     # DB Tools or Handling Tools
-    def updater(self, call_when_done=None):
+    def open(self):
+        """Open a connection to a database."""
+        getLogger(pdname+"."+__name__+".Handler.open").debug("Opening connection to db: {0}".format(self.path))
+        self.db = sqlite3.connect(self.path)
+        self.c = self.db.cursor()
+        return
+
+    def close(self, commit=True):
+        """Close the connection to the database.
+
+        commit - Do a final commit? | boolean
+
+        """
+        getLogger(pdname+"."+__name__+".Handler.close").debug("Closing connection to db, with commmit: {0}".format(commit))
+        if commit:
+            self.db.commit()
+        self.db.close()
+        return
+
+    def updater(self, callback=None):
         """Rapper method for Updater."""
         getLogger(pdname+"."+__name__+".Handler.updater").debug("Updater rapper called.")
-        updater = Updater(country=self.country, path=self.path, call_when_done=call_when_done, run=True)
+        updater = Updater(country=self.country, path=self.path, callback=callback, run=True)
         return
 
     def search(self, columns="*", filters=None, search_string=None, filter_data=None):
@@ -193,8 +214,9 @@ class Handler(Tools):
                                                      Primary Key(FilterID));""")
         self.query("""CREATE TABLE IF NOT EXISTS Properties(
                                                      ID integer,
+                                                     Country text,
                                                      Primary Key(ID));""")
-        self.query("""INSERT OR IGNORE INTO Properties(ID) VALUES(1);""")
+        self.query("""INSERT OR IGNORE INTO Properties(ID, Country) VALUES(1, ?);""", self.country)
         logger.debug("first_setup successful.")
         return
 
@@ -243,25 +265,6 @@ class Handler(Tools):
             return self.c.lastrowid
         return result[0][0]
 
-    def open(self):
-        """Open a connection to a database."""
-        getLogger(pdname+"."+__name__+".Handler.open").debug("Opening connection to db: {0}".format(self.path))
-        self.db = sqlite3.connect(self.path)
-        self.c = self.db.cursor()
-        return
-
-    def close(self, commit=True):
-        """Close the connection to the database.
-
-        commit - Do a final commit? | boolean
-
-        """
-        getLogger(pdname+"."+__name__+".Handler.close").debug("Closing connection to db, with commmit: {0}".format(commit))
-        if commit:
-            self.db.commit()
-        self.db.close()
-        return
-
     def query(self, sql, data=()):
         """Send a query to the database.
 
@@ -272,6 +275,8 @@ class Handler(Tools):
         """
         if not sql.endswith(";"):
             sql += ";"
+        if not isinstance(data, (tuple, list)):
+            data = (data, )
         getLogger(pdname+"."+__name__+".Handler.query").debug("Querying db with '{0}' and data: {1}".format(" ".join([p.strip() for p in sql.split()]), data))
         self.c.execute(sql, data)
         self.db.commit()
@@ -482,7 +487,7 @@ class Updater(Handler, Thread_tools):
         """Initialization.
 
         Same args as Handler.
-        Plus call_when_done, a function to call when done, no args.
+        Plus callback, a function to call when done, no args.
         run - Autorun | boolean
 
         Was going to use Handler's but could not get it working as sqlite3
@@ -541,9 +546,9 @@ class Updater(Handler, Thread_tools):
         self.db.commit()
         self.close() # Must
         logger.debug("Complete updated")
-        if "call_when_done" in self.kwargs:
+        if "callback" in self.kwargs:
             logger.debug("Call back been executed.")
-            self.kwargs["call_when_done"]()
+            self.kwargs["callback"]()
         return
 
 
