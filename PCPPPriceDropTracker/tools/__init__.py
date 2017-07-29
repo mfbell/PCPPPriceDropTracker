@@ -20,7 +20,8 @@ __all__ = ["main",
            "PDHandler",
            "PDPath",
            "PD",
-           "pdname"]
+           "pdname",
+           "config"]
 
 import os
 import sys
@@ -166,6 +167,7 @@ class PDHandler(SelfSavingDict):
 # Pre-called PDHandler and project name.
 PD = PDHandler()
 pdname = PD["project"]["name"]
+config = PDHandler(path = PD["project"]["config_file"])
 
 # Other tools
 def main(doc=None, itu=None, pause=True, xit=True):
