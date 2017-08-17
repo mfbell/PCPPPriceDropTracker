@@ -10,20 +10,16 @@ from .customWidgets import Panel, MessageBox, ScrollablePanel
 from .dialogs import OpenDB, CreateDB
 
 
-__all__ = ["App"]
+__all__ = ["Main"]
 
-class App(Panel):
+class Main(Panel):
     """The main window."""
 
-    def __init__(self, master = None, *args, **kwargs):
+    def __init__(self):
         """Initialization."""
         logger = getLogger(pdname + "." + __name__ + ".App.__init__")
         logger.debug("App initalization.")
-        if master is None:
-            master = tk.Tk()
-        if not "padding" in kwargs:
-            kwargs["padding"] = (12, 6, 6, 6)
-        super().__init__(master, *args, **kwargs)
+        super().__init__(tk.Tk(), padding = (12, 6, 6, 6))
         self.grid()
         self.master.withdraw()
         OpenDB(resent = config["databases"]["resent"], callback = self.finish_setup)
@@ -50,9 +46,8 @@ class App(Panel):
         self.search_filters = Search_Filter_Panel(self,
                                                   max_height = self.get_main_row_height,
                                                   min_height = self.get_main_row_height,
-                                                  #min_width=lambda: 600,
-                                                  max_width = lambda: 200
-                                                  )
+                                                  max_width = 200,
+                                                  padding = (0, 0, 6, 0))
         self.results_panel = Results_Panel(self, borderwidth = 2, relief = "sunken",
                                            show_columns = self.show_columns,
                                            search = self.db_handler.search,
@@ -66,18 +61,14 @@ class App(Panel):
                                      add_results = self.results_panel.add)
 
         self.results_panel.grid(column = 8, row = 2, sticky = "new")
-        #self.status_bar = Status_Bar(self)
         self.menu_bar = Menu_Bar(self)
         self.side_options = Side_Options(self)
-        #self.left_bar = ttk.Separator(self, orient = "vertical")
         # Packing
         self.title_zone.grid(column = 8, row = 0)
         self.right_bar.grid(column = 9, row = 2, rowspan = 3, sticky = "ns", padx = 6, pady = 6)
         self.side_options.grid(column = 10, row = 2, rowspan = 3, sticky = "nwe")
         self.search_box.grid(column = 8, row = 1, pady = (9, 3))
         self.search_filters.grid(column = 6, row = 2, sticky = "nwse")
-        #self.status_bar.grid(column = 0, row = 99, columnspan = 32, sticky = "s")
-        #self.left_bar.grid(column = 7, row = 2, sticky = "ns", padx = 6, pady = 3)
         logger.debug("App setup complete.")
         logger.info("PCPPPriceDropTracker GUI is running")
         return
@@ -101,6 +92,9 @@ class App(Panel):
     def mainloop(self, *args, **kw):
         self.master.mainloop(*args, **kw)
 
+    def quit(self):
+        self.master.quit()
+
 
 class Title_Panel(Panel):
     """Title panel."""
@@ -110,8 +104,8 @@ class Title_Panel(Panel):
         logger = getLogger(pdname + "." + __name__ + ".Title_Panel.__init__")
         logger.debug("Title_Panel initalization.")
         super().__init__(master, *args, **kwargs)
-        self.text = ttk.Label(self, text = "PCPPScraper\nWriten by mtech0")
-        # Packing
+        self.text = ttk.Label(self, text = "PCPPPriceDropTracker - writen by mtech0")
+
         self.text.grid(row = 0)
         logger.debug("Title_Panel setup complete.")
         return
@@ -336,14 +330,8 @@ class Search_Filter_Panel(ScrollablePanel):
         super().__init__(master, *args, **kwargs)
         # Build filters here:
         win = self.scrollwindow
-        win.title = ttk.Label(win, text = "Filters....")
-
+        win.title = ttk.Label(win, text = "Search filters:\nComing soon.")
         win.title.grid(column = 0, row = 0)
-
-        if 1:
-            win.mytext = ttk.Label(win, text = "\n".join([str(a) * 20 for a in range(100)]))
-            win.mytext.grid(column = 0, row = 1)
-
         logger.debug("Search_Filter_Panel setup complete.")
         return
 
