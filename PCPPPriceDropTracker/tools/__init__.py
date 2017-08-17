@@ -13,7 +13,7 @@ from threading import Thread
 from logging import getLogger
 
 __all__ = ["main", "get_number_in_range", "get_git_commit_hash", "Tools",
-           "Thread_tools", "CallbackOnEditDict", "SelfSavingDict",
+           "ThreadTools", "Thread_tools", "CallbackOnEditDict", "SelfSavingDict",
            "CallbackWithArgs", "PDHandler", "PDPath", "PD", "pdname", "config"]
 
 # Data type classes
@@ -238,25 +238,25 @@ class Tools():
         return
 
 
-class Thread_tools(Tools, Thread):
+class ThreadTools(Tools, Thread):
     """Threading Class Tools."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, run = False, *args, **kwargs):
         """Initialization."""
-        getLogger(pdname + "." + __name__ + ".Thread_tools.__init__").debug("Thread_tools Class called.")
+        logger = getLogger(pdname + "." + __name__ + ".ThreadTools.__init__")
+        logger.debug("ThreadTools Class called.")
         Thread.__init__(self)
         Tools.__init__(self, *args, **kwargs)
-        self.autorun()
-        return
-
-    def autorun(self):
-        """Autorun thread if kwargs["run"] is True."""
-        logger = getLogger(pdname + "." + __name__ + ".Tools.autorun")
-        logger.debug("Autorun called.")
-        if "run" in self.kwargs and self.kwargs["run"]:
-            logger.debug("Autorunning.")
+        if run:
+            logger.debug("Autorunning")
             self.start()
         return
+
+
+class Thread_tools(ThreadTools):
+    def __init__(self, *a, **kw):
+        getLogger(pdname + "." + __name__ + ".Thread_tools.__init__").info("Thread_tools Class called.")
+        super().__init__(*a, **kw)
 
 
 class CallbackWithArgs(Tools):
