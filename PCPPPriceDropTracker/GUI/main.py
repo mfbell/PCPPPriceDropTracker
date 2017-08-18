@@ -10,16 +10,32 @@ from .customWidgets import Panel, MessageBox, ScrollablePanel
 from .dialogs import OpenDB, CreateDB
 
 
-__all__ = ["Main"]
+__all__ = ["GUI", "Main"]
+
+
+class GUI(tk.Tk):
+
+    def __init__(self):
+        super().__init__()
+        self.withdraw()
+
+    # Could use withday/deiconify with a launched check if that works better...
+    def launch(self):
+        self.main = Main(self)
+
+    def close(self):
+        self.main.destory()
 
 class Main(Panel):
     """The main window."""
 
-    def __init__(self):
+    def __init__(self, master = None):
         """Initialization."""
         logger = getLogger(pdname + "." + __name__ + ".App.__init__")
         logger.debug("App initalization.")
-        super().__init__(tk.Tk(), padding = (12, 6, 6, 6))
+        if not master:
+            master = tk.Tk()
+        super().__init__(master, padding = (12, 6, 6, 6))
         self.grid()
         self.master.withdraw()
         OpenDB(resent = config["databases"]["resent"], callback = self.finish_setup)
