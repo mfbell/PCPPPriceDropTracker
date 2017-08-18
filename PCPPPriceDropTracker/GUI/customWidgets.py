@@ -42,7 +42,7 @@ class Panel(ttk.Frame, Tools):
 class MessageBox(tk.Toplevel, Tools, _Limitation):
     """Custom message box."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, on_close = None, *args, **kwargs):
         """Initialization.
 
         kwargs (none are required):
@@ -66,6 +66,7 @@ class MessageBox(tk.Toplevel, Tools, _Limitation):
         logger = getLogger(pdname + "." + __name__ + ".MessageBox.__init__")
         logger.debug("MessageBox initialization.")
         tk.Toplevel.__init__(self)
+        self.protocol('WM_DELETE_WINDOW', on_close)
         if "msg" in kwargs:
             msg = kwargs["msg"]
             if not isinstance(msg, list):
