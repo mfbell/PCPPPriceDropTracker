@@ -12,8 +12,8 @@ from time import time
 from threading import Thread
 from logging import getLogger
 
-__all__ = ["main", "get_number_in_range", "get_git_commit_hash", "Tools",
-           "ThreadTools", "Thread_tools", "CallbackOnEditDict", "SelfSavingDict",
+__all__ = ["main", "get_number_in_range", "get_git_commit_hash", "ThreadTools",
+           "Thread_tools", "CallbackOnEditDict", "SelfSavingDict",
            "CallbackWithArgs", "PDHandler", "PDPath", "PD", "pdname", "config"]
 
 # Data type classes
@@ -227,20 +227,6 @@ def get_git_commit_hash(version = "long"):
     else:
         raise ValueError("Invalid arg for version.")
 
-class Tools():
-    """legacy code for backward compatibility until removed completely.
-
-    Use to house custom logging system methods.
-
-    """
-
-    def __init__(self, *args, **kwargs):
-        """Initialization."""
-        getLogger(pdname + "." + __name__ + ".Tools.__init__").warn("Tools Class called")
-        self.args = args
-        self.kwargs = kwargs
-        return
-
 
 class ThreadTools(Thread):
     """Threading Class Tools."""
@@ -262,7 +248,7 @@ class Thread_tools(ThreadTools):
         super().__init__(*a, **kw)
 
 
-class CallbackWithArgs(Tools):
+class CallbackWithArgs():
     """CallbackWithArgs give you the ability to use args on a callback
     which would also be given args by the caller.
 
@@ -276,13 +262,14 @@ class CallbackWithArgs(Tools):
     Then pass the object as a function to the binding.
     """
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        return
+        self.args = args
+        self.kwargs = kwarg
 
     def __call__(self, *a, **kw):
         self.call(*a, **kw)
 
     def call(self, *a, **kw):
+        # Example method.
         print(*a)
         print(**kw)
 

@@ -9,27 +9,24 @@ from itertools import permutations
 from logging import getLogger
 
 from errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
-from tools import main, Tools, Thread_tools, pdname
+from tools import main, ThreadTools, pdname
 from dataScraper import scraper
 
 
 COUNTRIES = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us", None]
 
-class Handler(Tools):
+class Handler():
     """The database handler."""
 
-    def __init__(self, path, country=None, *args, **kwargs):
+    def __init__(self, path, country=None):
         """Initialization.
 
         path - Database file path | string
         country - PCPP country code | string
 
-        **kwargs - debug = debug object
-
         """
         logger = getLogger(pdname + "." + __name__ + ".Handler.__init__")
         logger.debug("Database handler initalization.")
-        super().__init__(*args, **kwargs)
         self.path = path
         self.country = country
         if self.country not in COUNTRIES:
@@ -480,7 +477,7 @@ class Handler(Tools):
         return self.query(sql, values) # Needs to be corrected/reformated.
 
 
-class Updater(Handler, Thread_tools):
+class Updater(Handler, ThreadTools):
     """Update the database to the lastest PCPP data."""
 
     def __init__(self, path, country, callback = None, *args, **kwargs):
@@ -489,6 +486,8 @@ class Updater(Handler, Thread_tools):
         Same args as Handler.
         Plus callback, a function to call when done, no args.
         run - Autorun | boolean
+
+        args/kwargs are passed to ThreadTools
 
         Was going to use Handler's but could not get it working as sqlite3
         objects but be created inside the same thread... but i did it in
@@ -501,7 +500,7 @@ class Updater(Handler, Thread_tools):
         if country not in COUNTRIES:
             raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)))
         self.country = country
-        Thread_tools.__init__(self, *args, **kwargs)
+        ThreadTools.__init__(self, *args, **kwargs)
         logger.debug("Updater ready.")
         return
 
