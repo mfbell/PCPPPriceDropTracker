@@ -226,7 +226,7 @@ class Handler(Tools):
         displayed - Removed displayed offers | boolean
 
         """
-        getLogger(pdname + "." + __name__ + ".Handler.clean_up").debug("clean_up called, removing non-active entries, removing displayed: {0}".formated(displayed))
+        getLogger(pdname + "." + __name__ + ".Handler.clean_up").debug("clean_up called, removing non-active entries, removing displayed: {0}".format(displayed))
         self.query("DELETE FROM Offers WHERE Active = 0")
         if displayed:
             self.query("DELETE FROM Offers WHERE Displayed = 1")
@@ -483,7 +483,7 @@ class Handler(Tools):
 class Updater(Handler, Thread_tools):
     """Update the database to the lastest PCPP data."""
 
-    def __init__(self, path, country, *args, **kwargs):
+    def __init__(self, path, country, callback = None, *args, **kwargs):
         """Initialization.
 
         Same args as Handler.
@@ -497,6 +497,7 @@ class Updater(Handler, Thread_tools):
         logger = getLogger(pdname + "." + __name__ + ".Updater.__init__")
         logger.debug("DB Updater initalization.")
         self.path = path
+        self.callback = callback
         if country not in COUNTRIES:
             raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)))
         self.country = country
@@ -545,9 +546,9 @@ class Updater(Handler, Thread_tools):
         self.db.commit()
         self.close() # Must
         logger.debug("Complete updated")
-        if "callback" in self.kwargs:
-            logger.debug("Call back been executed.")
-            self.kwargs["callback"]()
+        if self.callback:
+            logger.debug("Callback been executed.")
+            self.callback()
         return
 
 
