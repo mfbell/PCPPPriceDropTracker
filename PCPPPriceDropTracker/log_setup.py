@@ -28,8 +28,12 @@ LOG_CONFIG = {
             "handlers": ["consoleHandler", "fileHandler"],
             "propagate": False
         },
-        pdname + ".widgets": {
-            "level": "INFO",
+        pdname + ".GUI.main.GUI": {
+            "level": "DEBUG",
+            "propagate": True
+        },
+        pdname + ".main": {
+            "level": "DEBUG",
             "propagate": True
         }
     },

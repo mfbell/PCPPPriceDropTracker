@@ -10,31 +10,54 @@ from .customWidgets import Panel, MessageBox, ScrollablePanel
 from .dialogs import OpenDB, CreateDB
 
 
-__all__ = ["GUI", "Main"]
+__all__ = ["GUI"]
 
 
 class GUI(tk.Tk):
 
     def __init__(self):
+        getLogger(pdname + "." + __name__ + ".GUI.__init__").debug("GUI initialized.")
         super().__init__()
         self.withdraw()
+        self.toplevel = None
 
-    # Could use withday/deiconify with a launched check if that works better...
-    def launch(self):
-        self.main = Main(self)
+    def launch(self, *a):
+        logger = getLogger(pdname + "." + __name__ + ".GUI.launch")
+        if self.toplevel is None:
+            logger.debug("GUI launch called, no existing: launching.")
+            self.toplevel = tk.Toplevel(self)
+            self.toplevel.protocol('WM_DELETE_WINDOW', self.close)
+            self.main = Main(self.toplevel, self.close)
+        else:
+            logger.debug("GUI launch called, existing: bring to front.")
+            self.toplevel.attributes('-topmost', True)
+            self.toplevel.attributes('-topmost', False)
 
-    def close(self):
-        self.main.destory()
+    def close(self, *a):
+        logger = getLogger(pdname + "." + __name__ + ".GUI.close")
+        if self.toplevel is not None:
+            logger.debug("GUI close called, existing: closing.")
+            try:
+                self.toplevel.destroy()
+                self.toplevel = None
+            except AttributeError as e:
+                logger.exception((self.toplevel, e))
+        else:
+            logger.debug("GUI close called, no existing: pass")
+
+    def quit(self, *a):
+        getLogger(pdname + "." + __name__ + ".GUI.quit").debug("GUI quitting.")
+        super().destroy()
+        self.toplevel = None
 
 class Main(Panel):
     """The main window."""
 
-    def __init__(self, master = None):
+    def __init__(self, master, close):
         """Initialization."""
         logger = getLogger(pdname + "." + __name__ + ".App.__init__")
         logger.debug("App initalization.")
-        if not master:
-            master = tk.Tk()
+        self.close = close
         super().__init__(master, padding = (12, 6, 6, 6))
         self.grid()
         self.master.withdraw()
@@ -78,7 +101,7 @@ class Main(Panel):
 
         self.results_panel.grid(column = 8, row = 2, sticky = "new")
         self.menu_bar = Menu_Bar(self)
-        self.side_options = Side_Options(self)
+        self.side_options = Side_Options(self, self.close)
         # Packing
         self.title_zone.grid(column = 8, row = 0)
         self.right_bar.grid(column = 9, row = 2, rowspan = 3, sticky = "ns", padx = 6, pady = 6)
@@ -309,7 +332,7 @@ class Results_Panel(Panel):
 class Side_Options(Panel):
     """Side options bar."""
 
-    def __init__(self, master, *args, **kwargs):
+    def __init__(self, master, close, *args, **kwargs):
         """Initialization. Args as of Panel."""
         logger = getLogger(pdname + "." + __name__ + ".Side_Options.__init__")
         logger.debug("Side_Options initialization.")
@@ -322,7 +345,7 @@ class Side_Options(Panel):
         self.show_all = ttk.Button(self, text = "Show All", command = self.master.results_panel.show_all_w_filters)
 
         self.clear = ttk.Button(self, text = "Clear", command = self.master.results_panel.clear)
-        self.exit = ttk.Button(self, text = "Exit", command = self.master.quit)
+        self.exit = ttk.Button(self, text = "Exit", command = close)
         # Packing
         self.update.grid(row = 0, pady = (3, 0))
         self.show_all.grid(row = 1, pady = (3, 0))

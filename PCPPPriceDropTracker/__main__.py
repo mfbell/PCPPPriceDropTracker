@@ -2,5 +2,5 @@
 
 
 if __name__ == "__main__":
-    from main import App
-    App()
+    from main import app
+    app()
