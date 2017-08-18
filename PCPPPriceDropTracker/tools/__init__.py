@@ -228,25 +228,28 @@ def get_git_commit_hash(version = "long"):
         raise ValueError("Invalid arg for version.")
 
 class Tools():
-    """General Class Tools."""
+    """legacy code for backward compatibility until removed completely.
+
+    Use to house custom logging system methods.
+
+    """
 
     def __init__(self, *args, **kwargs):
         """Initialization."""
-        getLogger(pdname + "." + __name__ + ".Tools.__init__").debug("Tools Class called")
+        getLogger(pdname + "." + __name__ + ".Tools.__init__").warn("Tools Class called")
         self.args = args
         self.kwargs = kwargs
         return
 
 
-class ThreadTools(Tools, Thread):
+class ThreadTools(Thread):
     """Threading Class Tools."""
 
-    def __init__(self, run = False, *args, **kwargs):
+    def __init__(self, run = False, *a, **kw):
         """Initialization."""
         logger = getLogger(pdname + "." + __name__ + ".ThreadTools.__init__")
         logger.debug("ThreadTools Class called.")
-        Thread.__init__(self)
-        Tools.__init__(self, *args, **kwargs)
+        super().__init__(*a, **kw)
         if run:
             logger.debug("Autorunning")
             self.start()
@@ -255,7 +258,7 @@ class ThreadTools(Tools, Thread):
 
 class Thread_tools(ThreadTools):
     def __init__(self, *a, **kw):
-        getLogger(pdname + "." + __name__ + ".Thread_tools.__init__").info("Thread_tools Class called.")
+        getLogger(pdname + "." + __name__ + ".Thread_tools.__init__").warn("Thread_tools Class called.")
         super().__init__(*a, **kw)
 
 
