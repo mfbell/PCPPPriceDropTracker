@@ -2,6 +2,7 @@
 
 import platform
 import queue
+import argparse
 from sys import exit
 from threading import Event
 from logging import getLogger
@@ -20,11 +21,19 @@ def app():
     logging_setup()
     logger = getLogger(pdname + "." + __name__ + ".main")
     logger.info("PCPPPriceDropTracker launching...")
+    # Arg parser
+    parser = argparse.ArgumentParser(prog = PD["project"]["name"],
+                                     description = PD["project"]["description"])
+    parser.add_argument("--background", action = "store_true", help = "Launch without GUI")
+    args = parser.parse_args()
+    # Launching
     gui = GUI()
+    if not args.background:
+        gui.launch()
     bg_thread = BackgroundThread(lambda: print("BGThread activity"))
     icon = SystrayIcon(launch_gui = gui.launch,
                        scan = lambda: print("Launch scan..."),
-                       quit = gui.quit)
+                       quit = gui.destroy)
     logger.debug("Main thread loop running.")
     gui.mainloop()
     logger.info("PCPPPriceDropTracker closing.")

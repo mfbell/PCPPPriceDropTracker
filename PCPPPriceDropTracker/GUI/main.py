@@ -12,7 +12,6 @@ from .dialogs import OpenDB, CreateDB
 
 __all__ = ["GUI"]
 
-
 class GUI(tk.Tk):
 
     def __init__(self):
@@ -37,15 +36,12 @@ class GUI(tk.Tk):
         logger = getLogger(pdname + "." + __name__ + ".GUI.close")
         if self.toplevel is not None:
             logger.debug("GUI close called, existing: closing.")
-            try:
-                self.toplevel.destroy()
-                self.toplevel = None
-            except AttributeError as e:
-                logger.exception((self.toplevel, e))
+            self.toplevel.destroy()
+            self.toplevel = None
         else:
             logger.debug("GUI close called, no existing: pass")
 
-    def quit(self, *a):
+    def destroy(self, *a):
         getLogger(pdname + "." + __name__ + ".GUI.quit").debug("GUI quitting.")
         super().destroy()
         self.toplevel = None
@@ -56,58 +52,57 @@ class Main(Panel):
     def __init__(self, master, close):
         """Initialization."""
         logger = getLogger(pdname + "." + __name__ + ".Main.__init__")
-        logger.debug("App initalization.")
-        self.close = close
+        logger.debug("GUI main window initalization.")
         super().__init__(master, padding = (12, 6, 6, 6))
+        self.close = close
         self.grid()
         self.master.withdraw()
         OpenDB(resent = config["databases"]["resent"], callback = self.finish_setup)
 
     def finish_setup(self, path, *a, **kw):
         logger = getLogger(pdname + "." + __name__ + ".Main.finish_setup")
-        logger.debug("App initalization.")
-        self.master.deiconify()
+        logger.debug("Finish setup...")
         self.db_handler = Handler(path = path, country = "uk")
-
         # Window setup
-        self.master.title("PCPPPriceDropTracker {0}".format(PD["project"]["version"]))
+        self.master.title("PCPPPriceDropTracker")
         self.master.option_add('*tearOff', False)
-            # ColName:[DisplayName, width (-1=Default)]
-        self.show_columns = {"Name": ["Name", 450],
+            # ColName:[DisplayName, width (-1: Default)]
+        self.columns = {"Name": ["Name", 450],
                              "Normal_Price": ["Normal Price", 100],
                              "Offer_Price": ["Offer Price", 100],
                              "Flames": ["Flames", 75],
-                             "Active": ["Active", 100]
-                             }
+                             "Active": ["Active", 100]}
         # Content
-        self.title_zone = TitlePanel(self)
-        self.right_bar = ttk.Separator(self, orient = "vertical")
+        self.title_panel = TitlePanel(self)
+        self.right_sep = ttk.Separator(self, orient = "vertical")
         self.results_panel = ResultsPanel(self, borderwidth = 2, relief = "sunken",
-                                          show_columns = self.show_columns,
-                                          search = self.db_handler.search,
+                                          columns = self.columns,
+                                          searchdb = self.db_handler.search,
                                           get_search_filters = self.get_search_filters)
+        #
         self.search_filters = SearchFilterPanel(self,
                                                 max_height = self.get_main_row_height,
                                                 min_height = self.get_main_row_height,
                                                 max_width = 200,
                                                 padding = (0, 0, 6, 0))
         self.search_box = SearchBox(master = self,
-                                     showall = self.ResultsPanel.show_all_w_filters,
+                                     showall = self.results_panel.show_all_w_filters,
                                      search = self.db_handler.search,
-                                     show_columns = self.show_columns,
+                                     columns = self.columns,
                                      get_search_filters = self.search_filters.get,
-                                     clear_results = self.ResultsPanel.clear,
-                                     add_results = self.ResultsPanel.add)
+                                     clear_results = self.results_panel.clear,
+                                     add_results = self.results_panel.add)
 
         self.results_panel.grid(column = 8, row = 2, sticky = "new")
         self.menu_bar = MenuBar(self)
         self.side_options = SideOptions(self, self.close)
         # Packing
-        self.title_zone.grid(column = 8, row = 0)
-        self.right_bar.grid(column = 9, row = 2, rowspan = 3, sticky = "ns", padx = 6, pady = 6)
+        self.title_panel.grid(column = 8, row = 0)
+        #self.right_sep.grid(column = 9, row = 2, rowspan = 3, sticky = "ns", padx = 6, pady = 6)
         self.side_options.grid(column = 10, row = 2, rowspan = 3, sticky = "nwe")
         self.search_box.grid(column = 8, row = 1, pady = (9, 3))
         self.search_filters.grid(column = 6, row = 2, sticky = "nwse")
+        self.master.deiconify()
         logger.debug("App setup complete.")
         logger.info("PCPPPriceDropTracker GUI is running")
         return
@@ -136,10 +131,11 @@ class Main(Panel):
 
     def get_search_filters(self):
         try:
-            return self.search_filters.get()
+            a = self.search_filters.get()
         except AttributeError as e:
             getLogger(pdname + "." + __name__ + ".Main.get_search_filters").exception(e)
             return "Active = 1"
+        return a
 
 
 class TitlePanel(Panel):
@@ -160,7 +156,7 @@ class TitlePanel(Panel):
 class SearchBox(Panel):
     """Search Box Panel."""
 
-    def __init__(self, master, showall, search, show_columns, get_search_filters,
+    def __init__(self, master, showall, search, columns, get_search_filters,
                  clear_results, add_results, *args, **kwargs):
         """Initialization. Args as of Panel.
 
@@ -169,8 +165,8 @@ class SearchBox(Panel):
             / ResultsPanel.show_all_w_filters
         search - Database handler search function | Function
             / DBHandler.search
-        show_columns - Show columns dictionary | Dictionary
-            / show_columns
+        columns - Show columns dictionary | Dictionary
+            / columns
         get_search_filters - Get all search filters to pass to dbhandler search
                                 | Function
             / SearchFilterPanel.get
@@ -185,7 +181,7 @@ class SearchBox(Panel):
         super().__init__(master, *args, **kwargs)
         self.showall = showall
         self.searchdb = search
-        self.show_columns = show_columns
+        self.columns = columns
         self.get_search_filters = get_search_filters
         self.clear_results = clear_results
         self.add_results = add_results
@@ -207,13 +203,13 @@ class SearchBox(Panel):
         if not string or string == "":
             logger.debug("No value in string, showing all with filters applied.")
             return self.showall()
-        results = self.searchdb(self.show_columns, self.get_search_filters(), string)
+        results = self.searchdb(self.columns, self.get_search_filters(), string)
         if not results:
             logger.debug("No result from search query.")
             return
         elif "external" in kwargs and kwargs["external"]:
             logger.debug("Search results been opened external.")
-            ResultsPanel(tk.Toplevel(self), self.show_columns, self.search_text.get(), self.get_search_filters, results)
+            ResultsPanel(tk.Toplevel(self), self.columns, self.searchdb, self.search_text.get(), self.get_search_filters, string, results)
             return
         self.clear_results()
         logger.debug("Search results sent to be added to results panel.")
@@ -228,13 +224,13 @@ class SearchBox(Panel):
 class ResultsPanel(Panel):
     """Results Panel."""
 
-    def __init__(self, master, show_columns, search, get_search_filters, open_results = None, *args, **kwargs):
+    def __init__(self, master, columns, searchdb, get_search_filters, search = None, open_results = None, *args, **kwargs):
         """Initialization. Args as of Panel.
 
         Plus:
-        show_columns - Columns to show | Dictionary
-            / master.show_columns
-        search - Database handler search function | Function
+        columns - Columns to show | Dictionary
+            / master.columns
+        searchdb - Database handler search function | Function
             / DBHandler.search
         get_search_filters - Get search filters for search call | Function
             / SearchFilterPanel.get
@@ -246,29 +242,30 @@ class ResultsPanel(Panel):
         """
         logger = getLogger(pdname + "." + __name__ + ".ResultsPanel.__init__")
         logger.debug("ResultsPanel initalization.")
-        self.show_columns = show_columns
-        self.searchdb = search
+        self.columns = columns
+        self.searchdb = searchdb
         self.get_search_filters = get_search_filters
+        self.search = search
         self.rows = 20
         super().__init__(master, *args, **kwargs)
-        self.tree = ttk.Treeview(self, column = ([col for col in self.show_columns][1:]), height = self.rows)
+        self.tree = ttk.Treeview(self, column = ([col for col in self.columns][1:]), height = self.rows)
         first = True
-        for col in self.show_columns:
+        for col in self.columns:
             if first:
                 col_ = '#0'
                 first = False
             else:
                 col_ = col
-            self.tree.heading(col_, text = self.show_columns[col][0])
-            if not self.show_columns[col][1] == -1:
-                self.tree.column(col_, width = self.show_columns[col][1])
+            self.tree.heading(col_, text = self.columns[col][0])
+            if not self.columns[col][1] == -1:
+                self.tree.column(col_, width = self.columns[col][1])
         self.ybar = ttk.Scrollbar(self, orient = "vertical", command = self.tree.yview)
         self.tree['yscrollcommand'] = self.ybar.set
         # Packing
         self.tree.grid(column = 0, row = 0)
         self.ybar.grid(column = 1, row = 0, sticky = "ns")
         if open_results:
-            self.master.title("Search Results: '{0}'".format(self.search_text))
+            self.master.title("Search Results: '{0}'".format(self.search))
             self.grid()
             self.add(data)
         else:
@@ -285,21 +282,7 @@ class ResultsPanel(Panel):
         """Show all <conditions -only active=1 at the moment> offers."""
         getLogger(pdname + "." + __name__ + ".ResultsPanel.show_all_w_filters").debug("Showing all entries with filters applied to results panel.")
         self.clear()
-        results = self.searchdb(self.show_columns, self.get_search_filters(), None)
-        return self.add(results)
-
-    def _add_by_id(self, ids):
-        """Add offer to the Treeview by OfferID.
-        //Not tested, believe to not work//
-
-        ids - A list/tuple of OfferIDs | list/tuple
-            / Can be [(id,), ...] as got from query.
-        """
-        getLogger(pdname + "." + __name__ + ".ResultsPanel.add_by_id").debug("Adding entries by id.")
-        if isinstance(ids[0], tuple):
-            wasIds = ids
-            ids = [id[0] for id in wasIds]
-        results = self.searchdb(self.show_columns, "(OfferID = {0})".format(" OR OfferID = ".join("?")), None, ids)
+        results = self.searchdb(self.columns, self.get_search_filters(), None)
         return self.add(results)
 
     def add(self, data):
@@ -311,6 +294,10 @@ class ResultsPanel(Panel):
         for item in data:
             self.tree.insert('', "end", text = item[0], values = (item[1:]))
         return
+
+    def input(self, data):
+        self.clear()
+        self.add(data)
 
 
 class SideOptions(Panel):
@@ -325,17 +312,15 @@ class SideOptions(Panel):
         self.update = ttk.Button(self, text = "Update", command = lambda: UpdateHanlder(self.master))
         self.add_filter = ttk.Button(self, text = "Add Filter", command = self.master.add_filter)
         self.run_filter = ttk.Button(self, text = "Run Filters", command = self.master.run_filters)
-        self.clear_db = ttk.Button(self, text = "Clean DB", command = self.master.db_handler.clean_up)
-        self.show_all = ttk.Button(self, text = "Show All", command = self.master.ResultsPanel.show_all_w_filters)
+        self.show_all = ttk.Button(self, text = "Show All", command = self.master.results_panel.show_all_w_filters)
 
-        self.clear = ttk.Button(self, text = "Clear", command = self.master.ResultsPanel.clear)
+        self.clear = ttk.Button(self, text = "Clear", command = self.master.results_panel.clear)
         self.exit = ttk.Button(self, text = "Exit", command = close)
         # Packing
         self.update.grid(row = 0, pady = (3, 0))
         self.show_all.grid(row = 1, pady = (3, 0))
         self.add_filter.grid(row = 2, pady = (3, 0))
         self.run_filter.grid(row = 3, pady = (3, 0))
-        self.clear_db.grid(row = 4, pady = (3, 0))
 
         self.clear.grid(row = 98, pady = (3, 0))
         self.exit.grid(row = 99, pady = (3, 0), sticky = "s")
@@ -461,7 +446,7 @@ class UpdateHanlder():
     def update_and_close(self):
         getLogger(pdname + "." + __name__ + ".UpdateHanlder.update_and_close").debug("Close and update pressed.")
         self.msg_box.destroy()
-        self.master.SearchBox.search()
+        self.master.search_box.search()
         return
 
 
