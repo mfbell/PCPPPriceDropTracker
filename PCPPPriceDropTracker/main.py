@@ -24,16 +24,18 @@ def app():
     # Arg parser
     parser = argparse.ArgumentParser(prog = PD["project"]["name"],
                                      description = PD["project"]["description"])
-    parser.add_argument("--background", action = "store_true", help = "Launch without GUI")
+    parser.add_argument("--background", action = "store_true", help = "Launch without interface")
+    parser.add_argument("--no-icon", action = "store_true", help = "Launch without system try icon")
     args = parser.parse_args()
     # Launching
     gui = GUI()
     if not args.background:
         gui.launch()
+    if not args.no_icon:
+        icon = SystrayIcon(launch_gui = gui.launch,
+                           scan = lambda: print("Launch scan..."),
+                           quit = gui.destroy)
     bg_thread = BackgroundThread(lambda: print("BGThread activity"))
-    icon = SystrayIcon(launch_gui = gui.launch,
-                       scan = lambda: print("Launch scan..."),
-                       quit = gui.destroy)
     logger.debug("Main thread loop running.")
     gui.mainloop()
     logger.info("PCPPPriceDropTracker closing.")
@@ -77,7 +79,8 @@ class SystrayIcon(ThreadTools):
             root = Tk()
             root.withdraw()
             MessageBox(msg = ["OSX is not currently supported due to two modules needing to run in the main thread.",
-                              "We will be working on a solution."],
+                              "We will be working on a solution.",
+                              "In the meantime run with the parameter --no-icon"],
                        title = "PCPPPriceDropTracker: OSX Unsupported",
                        buttons = {"close": ["Close", root.quit]},
                        grab = True,
