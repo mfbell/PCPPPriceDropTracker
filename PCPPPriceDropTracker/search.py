@@ -18,6 +18,12 @@ class SearchEngine():
         built SQL string other than values which should be given secondly in
         a list. e.g. "Active = ?", [1]
 
+    push(results) - Call all data_outputs with results
+        results is entended to be in a database select query format.
+    update() - Run a search and push.
+        Use to trigger updates
+    search() - Search function, returns results
+
     """
 
     def __init__(self, db_handler, output_columns, search_string, data_outputs = [], search_filters = []):
@@ -41,10 +47,13 @@ class SearchEngine():
         self.data_outputs = data_outputs
         self.search_filters = search_filters
 
-    def push(self):
+    def push(self, results):
         """Send data to data_outputs."""
         for output in self.data_outputs:
-            output(self.results)
+            output(results)
+
+    def update(self):
+        self.push(self.search())
 
     def search(self):
         """Magic Search(TM) /s

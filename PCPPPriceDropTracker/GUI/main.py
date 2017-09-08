@@ -46,6 +46,7 @@ class GUI(tk.Tk):
         super().destroy()
         self.toplevel = None
 
+
 class Main(Panel):
     """The main window."""
 
