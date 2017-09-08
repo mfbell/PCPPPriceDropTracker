@@ -5,12 +5,12 @@
   },
   "databases": {
     "update": [
-      "X:/coding/projects/PCPPPriceDropTracker/pcpp_offers.sqlite3"
+      "./PCPPPriceDropTracker/pcpp_offers.sqlite3"
     ],
-    "default": "X:/coding/projects/PCPPPriceDropTracker/pcpp_offers.sqlite3",
+    "default": "./PCPPPriceDropTracker/pcpp_offers.sqlite3",
     "resent": [
-      "X:/coding/projects/PCPPPriceDropTracker/pcpp_offers.sqlite3",
-      "X:/coding/projects/PCPPPriceDropTracker/main.db"
+      "./PCPPPriceDropTracker/pcpp_offers.sqlite3",
+      "./PCPPPriceDropTracker/main.db"
     ]
   },
   "global_db_settings": {

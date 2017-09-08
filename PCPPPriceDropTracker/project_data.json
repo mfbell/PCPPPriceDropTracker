@@ -18,11 +18,11 @@
       "short": ""
     },
     "license": {
-      "name": "To be confirmed",
-      "url": "https://www.gnu.org/licenses/gpl.txt",
+      "name": "GNU General Public License v3.0",
+      "url": "https://www.gnu.org/licenses/gpl-3.0.txt",
       "file": "LICENSE.txt"
     },
-    "config_file": "X:/coding/projects/PCPPPriceDropTracker/PCPPPriceDropTracker/config.json",
+    "config_file": "./PCPPPriceDropTracker/config.json",
     "doc_templates": {
       "folder": "doc_templates",
       "config": "doc_templates/export_config.json"
