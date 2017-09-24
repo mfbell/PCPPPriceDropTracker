@@ -9,7 +9,7 @@
   "project": {
     "name": "PCPPPriceDropTracker",
     "description": "Track price drops on PC Part Picker",
-    "long_description": "README.rst",
+    "long_description": "README.md",
     "version": "0.1.0",
     "status": "Development",
     "url": "https://github.com/mtech0/PCPPPriceDropTracker",
@@ -23,11 +23,19 @@
       "file": "LICENSE.txt"
     },
     "config_file": "./PCPPPriceDropTracker/config.json",
-    "doc_templates": {
-      "folder": "doc_templates",
-      "config": "doc_templates/export_config.json"
-    },
-
+    "sites": [
+      "au",
+      "be",
+      "ca",
+      "de",
+      "es",
+      "fr",
+      "in",
+      "it",
+      "nz",
+      "uk",
+      "us"
+    ],
     "requirements": "requirements.txt",
     "keywords": "price drop tracker automatic notifications interface",
     "classifiers": [
@@ -36,7 +44,7 @@
       "Intended Audience :: End Users/Desktop",
       "Intended Audience :: Information Technology",
       "Topic :: Utilities",
-      "License :: TBC",
+      "License :: GNU General Public License v3.0",
       "Natural Language :: English",
       "Programming Language :: Python :: 3",
       "Programming Language :: Python :: 3.6"
@@ -53,13 +61,9 @@
     "exclude-packages": []
   },
   "_comments": {
-    "long_description": "Needs to be corrected.",
-    "license.name": "Needs updating.",
-    "license.url": "Needs updating.",
     "keywords": "Needs updating.",
     "classifiers": "License entry needs updating.",
     "entry_points": "Update.",
     "exclude-packages": "Update.",
-    "config_file": "Needs to be corrected."
   }
 }
