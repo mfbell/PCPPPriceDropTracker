@@ -5,83 +5,44 @@
 import sqlite3
 from time import time
 import json
-from itertools import permutations
 from logging import getLogger
 
-from errors import UnknownCountryError, FilterBuildError, UnknownPropertyError
-from tools import main, ThreadTools, pdname
+from exception import CustomException
+from tools import main, ThreadTools, pdname, countries
 from dataScraper import scraper
 
 
-COUNTRIES = ["au", "be", "ca", "de", "es", "fr", "in", "it", "nz", "uk", "us", None]
-
 class Handler():
-    """The database handler."""
+    """PCPPPriceDropTracker Database Handler."""
 
-    def __init__(self, path, country=None):
-        """Initialization.
-
-        path - Database file path | string
-        country - PCPP country code | string
-
-        """
+    def __init__(self):
+        """Initialization."""
         logger = getLogger(pdname + "." + __name__ + ".Handler.__init__")
         logger.debug("Database handler initalization.")
-        self.path = path
-        self.country = country
-        if self.country not in COUNTRIES:
-            raise UnknownCountryError("PCPP does not support the country {0}. Try: {1}".format(country, ", ".join(countries)))
-        self.open()
-        self.first_setup()
-        logger.debug("Database handler setup complete.")
-        return
 
     # DB Tools or Handling Tools
-    def open(self):
-        """Open a connection to a database."""
-        getLogger(pdname + "." + __name__ + ".Handler.open").debug("Opening connection to db: {0}".format(self.path))
-        self.db = sqlite3.connect(self.path)
-        self.c = self.db.cursor()
-        return
+    def create(self, path, country):
+        """Database creation method.
 
-    def close(self, commit=True):
-        """Close the connection to the database.
-
-        commit - Do a final commit? | boolean
+        path - File path | string
+        country - Country code | string
 
         """
-        getLogger(pdname + "." + __name__ + ".Handler.close").debug("Closing connection to db, with commmit: {0}".format(commit))
-        if commit:
-            self.db.commit()
-        self.db.close()
-        return
-
-    def updater(self, callback=None):
-        """Rapper method for Updater."""
-        getLogger(pdname + "." + __name__ + ".Handler.updater").debug("Updater rapper called.")
-        updater = Updater(country = self.country, path = self.path, callback = callback, run = True)
-        return
-
-    def first_setup(self):
-        """First time setup.
-
-        Also run when connecting to check all tables exist eta.
-
-        """
-        logger = getLogger(pdname + "." + __name__ + ".Handler.first_setup")
-        logger.debug("first_setup called.")
+        logger = getLogger(pdname + "." + __name__ + ".Handler.create")
+        logger.debug("Creating db {0}, {1}".format(path, country))
+        self.path = path
+        if country not in countries:
+            raise UnknownCountryError("PCPP does not support the country {0}. Try: {1}".format(country, ", ".join(countries)), country = country)
+        self.country = country
+        self.open(self.path)
+        logger.debug("Building database.")
         self.query("PRAGMA foreign_keys = ON;")
         self.query("""CREATE TABLE IF NOT EXISTS Products(
                                                      ProductID integer,
                                                      Name text,
-                                                     ProductTypeID integer,
+                                                     ProductType text,
                                                      PCPP_URL text,
-                                                     Primary Key(ProductID),
-                                                     Foreign Key(ProductTypeID) references ProductTypes(ProductTypeID));""")
-        self.query("""CREATE TABLE IF NOT EXISTS ProductTypes(
-                                                     ProductTypeID integer,
-                                                     Description text,
-                                                     Primary Key(ProductTypeID));""")
+                                                     Primary Key(ProductID));""")
         self.query("""CREATE TABLE IF NOT EXISTS Offers(
                                                      OfferID integer,
                                                      Active integer,
@@ -106,27 +67,62 @@ class Handler():
                                                      Country text,
                                                      Primary Key(ID));""")
         self.query("""INSERT OR IGNORE INTO Properties(ID, Country) VALUES(1, ?);""", self.country)
-        logger.debug("first_setup successful.")
-        return
+        logger.debug("Build Complete.")
 
-    def clean_up(self, displayed = False):
-        """Remove all inactive (and displayed) offers
+    def open(self, path):
+        """Database connection opening method.
 
-        displayed - Removed displayed offers | boolean
+        path - File path | string
 
         """
-        getLogger(pdname + "." + __name__ + ".Handler.clean_up").debug("clean_up called, removing non-active entries, removing displayed: {0}".format(displayed))
-        self.query("DELETE FROM Offers WHERE Active = 0")
+        getLogger(pdname + "." + __name__ + ".Handler.open").debug("Opening connection to db: {0}".format(path))
+        self.db = sqlite3.connect(path)
+        self.c = self.db.cursor()
+
+    def close(self, commit = True):
+        """Database connection termination method.
+
+        commit - Do a final commit? | boolean
+
+        """
+        getLogger(pdname + "." + __name__ + ".Handler.close").debug("Closing connection to db, with commmit?: {0}".format(commit))
+        if commit:
+            self.db.commit()
+        self.db.close()
+
+    def updater(self, callback = None):
+        """Database updater method.
+
+        Needs rewriting...
+
+        callback - Function to call on completion | Function
+
+        """
+        getLogger(pdname + "." + __name__ + ".Handler.updater").debug("Updater rapper called.")
+        updater = Updater(country = self.country, path = self.path, callback = callback, run = True)
+
+    def clean(self, inactive = True, displayed = False):
+        """Remove all inactive and/or displayed offers from the database.
+
+        inactive - Remove inactive offers | boolean
+            / Defaults to True
+        displayed - Removed displayed offers | boolean
+            / Defaults to False
+
+        """
+        logger = getLogger(pdname + "." + __name__ + ".Handler.clean")
+        logger.debug("Removing inactive: {} and displayed: {} entries from database offers tablle".format(inactive, displayed))
+        if inactive:
+            self.query("DELETE FROM Offers WHERE Active = 0")
         if displayed:
             self.query("DELETE FROM Offers WHERE Displayed = 1")
-        return
 
-    def get_product_id(self, item):
-        """Get a products id from scraped offer data.
+    """def get_product_id(self, item):
+        ""/"Get a products id from scraped offer data.
 
         item - all item data | dict
 
-        """
+        ""/"
         logger = getLogger(pdname + "." + __name__ + ".Handler.get_product_id")
         logger.debug("Call to get_product_id.")
         results = self.query("SELECT ProductID FROM Products WHERE Name = ?", (item["name"],))
@@ -136,39 +132,47 @@ class Handler():
             self.query("INSERT INTO Products(Name, ProductTypeID, PCPP_URL) VALUES (?, ?, ?)",
                        (item["name"], self.get_catagorty_id(item["catagorty"]), item["pcpp url"]))
             return self.c.lastrowid
-        return results[0][0]
+        return results[0][0]""""
 
-    def get_catagorty_id(self, cat):
-        """Get catagorty id.
+    def get_product_id(self, name):
+        """Get product ID by name.
 
-        cat - the catagorty | sting
+        name - Name value of the product | String
+        Returns the ID as a integer.
+
+        UnknownProductWarning will be raised if no entry is found.
+        ProductNameClashWarning will be raised if multiple entries are found.
+            IDs can be frond in the error under results.
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".Handler.get_catagorty_id")
-        logger.debug("Call to get_catagorty_id, get id of catagorty {0}".format(cat))
-        result = self.query("SELECT ProductTypeID FROM ProductTypes WHERE Description = ?", cat)
-        logger.debug("Result: {0}".format(result))
-        if len(result) < 1:
-            logger.debug("Unkonwn catagorty, adding to db.")
-            self.query("INSERT INTO ProductTypes(Description) VALUES (?)", (cat,))
-            return self.c.lastrowid
-        return result[0][0]
+        logger = getLogger(pdname + "." + __name__ + ".Handler.get_product_id")
+        logger.debug("Get product ID of {}".format(name))
+        result = self.query("SELECT ProductID FROM Products WHERE Name = ?", (item,))
+        if not result:
+            raise UnknownProductWarning("Name: {}".format(name), name = name)
+        elif result > 1:
+            results = [id for id in result]
+            raise ProductNameClashWarning("Name: {}, ProductIDs: {}".format(name, results),
+                                          name = name, results = results)
+        else:
+            return result[0][0]
 
-    def query(self, sql, data=()):
+    def query(self, sql, *data, commit = True):
         """Send a query to the database.
 
-        sql - SQL code to execute | string
-        data - Data to provide to replace ?s | tuple
-                / Not required.
+        sql - SQL code to execute | String
+        data - Data to provide to replace ?s | Tuple
+            / Not required.
+        commit - Whether to commit | Boolean
+            / Defaults to True
+        Returns cursor.fetchall
 
         """
-        if not sql.endswith(";"):
-            sql += ";"
-        if not isinstance(data, (tuple, list)):
-            data = (data, )
-        getLogger(pdname + "." + __name__ + ".Handler.query").debug("Querying db with '{0}' and data: {1}".format(" ".join([p.strip() for p in sql.split()]), data))
+        logger = getLogger(pdname + "." + __name__ + ".Handler.query")
+        logger.debug("Querying DB: '{}' with {}".format(" ".join([p.strip() for p in sql.split()]), data))
         self.c.execute(sql, data)
-        self.db.commit()
+        if commit:
+            self.db.commit()
         return self.c.fetchall()
 
     # Properties Methods
@@ -182,7 +186,7 @@ class Handler():
         # Not sqli protected but it is app-side, may change in future.
         columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
         if not key in columns: # A bit of sqli protection as I could not get ? to work.
-            raise UnknownPropertyError("Unknown property: {0}".format(key))
+            raise UnknownPropertyError("Unknown property: {0}".format(key), key = key)
         return self.query("SELECT {0} FROM Properties WHERE ID = 1".format(key))[0][0]
 
     def property_add(self, key, value = None, constraint = "BLOB"):
@@ -213,7 +217,7 @@ class Handler():
         getLogger(pdname + "." + __name__ + ".Handler.property_set").debug("Property set: key {0}, value {1}".format(key, value))
         columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
         if not key in columns: # A bit of sqli protection as I could not get ? to work.
-            raise UnknownPropertyError("Unknown property: {0}".format(key))
+            raise UnknownPropertyError("Unknown property: {0}".format(key), key = key)
         self.query("UPDATE Properties SET {0} = ? WHERE ID = 1".format(key), (value,))
         return
 
@@ -335,7 +339,7 @@ class Handler():
                     values.append(str(self.query("SELECT ProductTypeID FROM ProductTypes WHERE Description = ?", (value,))[0][0]))
                     continue
                 else:
-                    raise FilterBuildError("Unknown filter: {0} in {1} in {2}".format(col, part, filters))
+                    raise FilterBuildError("Unknown filter: {0} in {1} in {2}".format(col, part, filters), col = col, part = part, filters = filters)
                 # Comparison Op
                 if op == "=":
                     args += "= "
@@ -350,7 +354,7 @@ class Handler():
                 elif op == ">=":
                     args += ">= "
                 else:
-                    raise FilterBuildError("Unknown comparision: {0} in {1} in {2}".format(op, part, filters))
+                    raise FilterBuildError("Unknown comparision: {0} in {1} in {2}".format(op, part, filters), op = op, part = part, filters = filters)
                 # Value
                 args += "?"
                 values.append(str(value))
@@ -360,7 +364,7 @@ class Handler():
             elif part.upper() == "OR":
                 args += "OR"
             else:
-                raise FilterBuildError("Can not build filter from filter data: {0} in {1}".format(part, filters))
+                raise FilterBuildError("Can not build filter from filter data: {0} in {1}".format(part, filters), part = part, filters = filters)
         # Call
         if args:
             args = " WHERE" + args
@@ -389,8 +393,8 @@ class Updater(Handler, ThreadTools):
         logger.debug("DB Updater initalization.")
         self.path = path
         self.callback = callback
-        if country not in COUNTRIES:
-            raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)))
+        if country not in countries:
+            raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)), county = county)
         self.country = country
         ThreadTools.__init__(self, *args, **kwargs)
         logger.debug("Updater ready.")
@@ -442,6 +446,25 @@ class Updater(Handler, ThreadTools):
             self.callback()
         return
 
+
+# Exceptions
+class UnknownCountryError(CustomException):
+    """General unknown country error."""
+
+class FilterError(CustomException):
+    """General filter error."""
+
+class FilterBuildError(FilterError):
+    """General filter build error."""
+
+class UnknownPropertyError(CustomException):
+    """General unknown property error."""
+
+class UnknownProductWarning(CustomException):
+    """General unknown product warning."""
+
+class ProductNameClashWarning(CustomException):
+    """General product name clash warning."""
 
 if __name__ == '__main__':
     main(__doc__)
