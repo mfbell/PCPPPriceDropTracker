@@ -6,7 +6,7 @@ import json
 from .tools import main
 
 
-__all__ = ["CallbackOnEditDict", "SelfSavingDict", "ActiveJSONDictionary"]
+__all__ = ["CallbackOnEditDict", "SelfSavingFileDictionary", "ActiveJSONDictionary"]
 
 class CallbackOnEditDict(dict):
     """Dictionary subclass with callback when edited.

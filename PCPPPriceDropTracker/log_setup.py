@@ -7,7 +7,8 @@ import logging.config
 from time import strftime
 import os
 
-from tools import main, get_git_commit_hash, pdname
+from tools import main, pdname
+from tools.tools import get_git_commit_hash
 
 
 DATETIME = strftime("%Y-%m-%d %H-%M-%S")

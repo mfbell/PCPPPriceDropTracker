@@ -12,7 +12,8 @@ from PIL import ImageTk, Image
 from logging import getLogger
 from os.path import basename
 
-from tools import Thread_tools, get_number_in_range, pdname, main
+from tools import pdname, main
+from tools.tools import get_number_in_range
 
 __all__ = ["Panel", "MessageBox", "ScrollablePanel", "AutoHidingScollbar", "FileList",
            "FileEntry", "FilePathEntry"]

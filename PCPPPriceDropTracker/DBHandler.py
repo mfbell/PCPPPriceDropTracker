@@ -8,7 +8,7 @@ from time import time
 import json
 from logging import getLogger
 
-from exception import CustomException
+from exceptions import CustomException
 from tools import main, ThreadTools, pdname, countries
 from dataScraper import scraper
 from tools.dictionaries import ActiveJSONDictionary
@@ -131,12 +131,6 @@ class DBHandler():
             self.query("DELETE FROM Offers WHERE Active = 0")
         if displayed:
             self.query("DELETE FROM Offers WHERE Displayed = 1")
-
-    """# add product
-            logger.debug("Unknown item, adding to db.")
-            self.query("INSERT INTO Products(Name, ProductTypeID, PCPP_URL) VALUES (?, ?, ?)",
-                       (item["name"], self.get_catagorty_id(item["catagorty"]), item["pcpp url"]))
-            return self.c.lastrowid""""
 
     def get_product_id(self, name):
         """Get product ID by name.
@@ -446,3 +440,12 @@ class ProductNameClashWarning(CustomException):
 
 if __name__ == '__main__':
     main(__doc__)
+
+
+"""
+# add product
+        logger.debug("Unknown item, adding to db.")
+        self.query("INSERT INTO Products(Name, ProductTypeID, PCPP_URL) VALUES (?, ?, ?)",
+                   (item["name"], self.get_catagorty_id(item["catagorty"]), item["pcpp url"]))
+        return self.c.lastrowid
+"""

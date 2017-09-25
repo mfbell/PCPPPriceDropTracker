@@ -4,8 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from logging import getLogger
 
-from DBHandler import Handler
-from tools import PD, pdname, PDHandler, config
+from tools import PD, pdname, config
 from .customWidgets import Panel, MessageBox, ScrollablePanel
 from .dialogs import OpenDB, CreateDB
 
