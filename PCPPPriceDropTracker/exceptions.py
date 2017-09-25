@@ -3,7 +3,7 @@
 from logging import getLogger
 
 
-__all__ = ["CustomException"]
+__all__ = ["CustomException", "UnknownCountryError"]
 
 class CustomException(Exception):
     """Custom Exception Tools class.
@@ -32,6 +32,12 @@ class CustomException(Exception):
     def script():
         """Custom script."""
         pass
+
+
+class UnknownCountryError(CustomException):
+    """General unknown country error."""
+    def __init__(self, country):
+        super().__init__("PCPPPriceDropTracker does not support the country {0}. Try: {1}".format(country, ", ".join(countries)), country = country)
 
 
 if __name__ == '__main__':
