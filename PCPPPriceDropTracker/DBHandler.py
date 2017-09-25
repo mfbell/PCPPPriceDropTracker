@@ -1,8 +1,9 @@
-"""Datebase handler for PCPPPriceDropTracker.
+"""Datebase Handler for PCPPPriceDropTracker.
 
 """
 
 import sqlite3
+import os
 from time import time
 import json
 from logging import getLogger
@@ -10,15 +11,18 @@ from logging import getLogger
 from exception import CustomException
 from tools import main, ThreadTools, pdname, countries
 from dataScraper import scraper
+from tools.dictionaries import ActiveJSONDictionary
 
 
-class Handler():
-    """PCPPPriceDropTracker Database Handler."""
+__all__ = ["DBHandler"]
+
+class DBHandler():
+    """PCPPPriceDropTracker Database DBHandler."""
 
     def __init__(self):
         """Initialization."""
-        logger = getLogger(pdname + "." + __name__ + ".Handler.__init__")
-        logger.debug("Database handler initalization.")
+        logger = getLogger(pdname + "." + __name__ + ".DBHandler.__init__")
+        logger.debug("Database Handler initalized.")
 
     # DB Tools or Handling Tools
     def create(self, path, country):
@@ -28,14 +32,16 @@ class Handler():
         country - Country code | string
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".Handler.create")
-        logger.debug("Creating db {0}, {1}".format(path, country))
-        self.path = path
+        logger = getLogger(pdname + "." + __name__ + ".DBHandler.create")
+        logger.debug("Creating DB {0}, country: {1}".format(path, country))
         if country not in countries:
-            raise UnknownCountryError("PCPP does not support the country {0}. Try: {1}".format(country, ", ".join(countries)), country = country)
+            # You should not value check normally but this is so important.
+            raise UnknownCountryError(country = country)
         self.country = country
-        self.open(self.path)
         logger.debug("Building database.")
+        if os.path.exists(path):
+            os.remove(path)
+        self._open(path)
         self.query("PRAGMA foreign_keys = ON;")
         self.query("""CREATE TABLE IF NOT EXISTS Products(
                                                      ProductID integer,
@@ -64,10 +70,13 @@ class Handler():
                                                      Primary Key(FilterID));""")
         self.query("""CREATE TABLE IF NOT EXISTS Properties(
                                                      ID integer,
-                                                     Country text,
+                                                     Data text,
                                                      Primary Key(ID));""")
-        self.query("""INSERT OR IGNORE INTO Properties(ID, Country) VALUES(1, ?);""", self.country)
-        logger.debug("Build Complete.")
+        self.query("""INSERT INTO Properties(ID, Data) VALUES(1, '{}');""")
+        logger.debug("Database build complete.")
+        self._properties_setup()
+        self.properties["country"] = country
+        logger.debug("Setup complete")
 
     def open(self, path):
         """Database connection opening method.
@@ -75,8 +84,14 @@ class Handler():
         path - File path | string
 
         """
-        getLogger(pdname + "." + __name__ + ".Handler.open").debug("Opening connection to db: {0}".format(path))
-        self.db = sqlite3.connect(path)
+        getLogger(pdname + "." + __name__ + ".DBHandler.open").debug("Open connection to DB: {0}".format(path))
+        self._open(path)
+        self._properties_setup()
+
+    def _open(self, path):
+        getLogger(pdname + "." + __name__ + ".DBHandler._open").debug("Opening connection to DB: {0}".format(path))
+        self.path = path
+        self.db = sqlite3.connect(self.path)
         self.c = self.db.cursor()
 
     def close(self, commit = True):
@@ -85,7 +100,7 @@ class Handler():
         commit - Do a final commit? | boolean
 
         """
-        getLogger(pdname + "." + __name__ + ".Handler.close").debug("Closing connection to db, with commmit?: {0}".format(commit))
+        getLogger(pdname + "." + __name__ + ".DBHandler.close").debug("Closing connection to db, with commmit?: {0}".format(commit))
         if commit:
             self.db.commit()
         self.db.close()
@@ -98,7 +113,7 @@ class Handler():
         callback - Function to call on completion | Function
 
         """
-        getLogger(pdname + "." + __name__ + ".Handler.updater").debug("Updater rapper called.")
+        getLogger(pdname + "." + __name__ + ".DBHandler.updater").debug("Updater rapper called.")
         updater = Updater(country = self.country, path = self.path, callback = callback, run = True)
 
     def clean(self, inactive = True, displayed = False):
@@ -110,29 +125,18 @@ class Handler():
             / Defaults to False
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".Handler.clean")
+        logger = getLogger(pdname + "." + __name__ + ".DBHandler.clean")
         logger.debug("Removing inactive: {} and displayed: {} entries from database offers tablle".format(inactive, displayed))
         if inactive:
             self.query("DELETE FROM Offers WHERE Active = 0")
         if displayed:
             self.query("DELETE FROM Offers WHERE Displayed = 1")
 
-    """def get_product_id(self, item):
-        ""/"Get a products id from scraped offer data.
-
-        item - all item data | dict
-
-        ""/"
-        logger = getLogger(pdname + "." + __name__ + ".Handler.get_product_id")
-        logger.debug("Call to get_product_id.")
-        results = self.query("SELECT ProductID FROM Products WHERE Name = ?", (item["name"],))
-        logger.debug("Result: {0}".format(results))
-        if len(results) < 1:
+    """# add product
             logger.debug("Unknown item, adding to db.")
             self.query("INSERT INTO Products(Name, ProductTypeID, PCPP_URL) VALUES (?, ?, ?)",
                        (item["name"], self.get_catagorty_id(item["catagorty"]), item["pcpp url"]))
-            return self.c.lastrowid
-        return results[0][0]""""
+            return self.c.lastrowid""""
 
     def get_product_id(self, name):
         """Get product ID by name.
@@ -145,7 +149,7 @@ class Handler():
             IDs can be frond in the error under results.
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".Handler.get_product_id")
+        logger = getLogger(pdname + "." + __name__ + ".DBHandler.get_product_id")
         logger.debug("Get product ID of {}".format(name))
         result = self.query("SELECT ProductID FROM Products WHERE Name = ?", (item,))
         if not result:
@@ -158,17 +162,17 @@ class Handler():
             return result[0][0]
 
     def query(self, sql, *data, commit = True):
-        """Send a query to the database.
+        """Send a query to the database method.
 
         sql - SQL code to execute | String
-        data - Data to provide to replace ?s | Tuple
+        data - Data to provide to replace ?s | None-keyword arguments
             / Not required.
         commit - Whether to commit | Boolean
             / Defaults to True
         Returns cursor.fetchall
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".Handler.query")
+        logger = getLogger(pdname + "." + __name__ + ".DBHandler.query")
         logger.debug("Querying DB: '{}' with {}".format(" ".join([p.strip() for p in sql.split()]), data))
         self.c.execute(sql, data)
         if commit:
@@ -176,50 +180,22 @@ class Handler():
         return self.c.fetchall()
 
     # Properties Methods
-    def property_get(self, key):
-        """Get property of database from Properties table.
+    #---------------------
+    # Database properties:
+    #{
+    #  "country": "xx"
+    #}
+    def _properties_setup(self):
+        """Setup self.properties."""
+        self.properties = ActiveJSONDictionary(output = self._properties_set, current = self._properties_get())
 
-        key - property name | string
+    def _properties_get(self):
+        """Returns string from the database's Properties table: column Data, row 1"""
+        return self.query("""SELECT Data FROM Properties WHERE ID = 1""")[0][0]
 
-        """
-        getLogger(pdname + "." + __name__ + ".Handler.property_get").debug("Get property: {0}".format(key))
-        # Not sqli protected but it is app-side, may change in future.
-        columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
-        if not key in columns: # A bit of sqli protection as I could not get ? to work.
-            raise UnknownPropertyError("Unknown property: {0}".format(key), key = key)
-        return self.query("SELECT {0} FROM Properties WHERE ID = 1".format(key))[0][0]
-
-    def property_add(self, key, value = None, constraint = "BLOB"):
-        """Add property to database Properties table.
-
-        key - property name | string
-        value - the value to set | value to put in db
-            / Not required but if given set.
-        constraint - sqlite column constraint | sting
-            / Defaults to any type prefered "BLOB"
-
-        """
-        # Does not really need sqli protection as it is app only facing and I can't get ? to work here.
-        getLogger(pdname + "." + __name__ + ".Handler.property_add").debug("property_add called with key {0}, value: {1}, constraint {2}".format(key, value, constraint))
-        self.query("ALTER TABLE Properties ADD COLUMN {0} {1}".format(key, constraint))
-        if value:
-            self.property_set(key, value)
-        return
-
-    def property_set(self, key, value):
-        """Set property in database Properties table.
-
-        key - property name | string
-        value - the value to set | value to put in db
-            / Not required but if given set.
-
-        """
-        getLogger(pdname + "." + __name__ + ".Handler.property_set").debug("Property set: key {0}, value {1}".format(key, value))
-        columns = [col[1] for col in self.query("PRAGMA table_info(Properties)")]
-        if not key in columns: # A bit of sqli protection as I could not get ? to work.
-            raise UnknownPropertyError("Unknown property: {0}".format(key), key = key)
-        self.query("UPDATE Properties SET {0} = ? WHERE ID = 1".format(key), (value,))
-        return
+    def _properties_set(self, string):
+        """Write string to database's Properties table: column Data, row 1."""
+        self.query("""UPDATE Properties SET Data = ? WHERE ID = 1""", string)
 
     # Filter Methods - Need reworking
     def filter_add(self, filter_, name = None):
@@ -231,7 +207,7 @@ class Handler():
         name - Name of filter | string
 
         """
-        getLogger(pdname + "." + __name__ + ".Handler.filter_add").debug("Add filter called. filter {0}, name {0}".format(filter_, name))
+        getLogger(pdname + "." + __name__ + ".DBHandler.filter_add").debug("Add filter called. filter {0}, name {0}".format(filter_, name))
         self.query("INSERT INTO Filters(Name, Filter, Date_Time) VALUES (?, ?, ?)", (name, json.dumps(filter_), time()))
         return
 
@@ -241,7 +217,7 @@ class Handler():
         ID - Filter name or FilterID | int or string
 
         """
-        getLogger(pdname + "." + __name__ + ".Handler.filter_delete").debug("Deleting filter {0}".format(ID))
+        getLogger(pdname + "." + __name__ + ".DBHandler.filter_delete").debug("Deleting filter {0}".format(ID))
         if isinstance(ID, int):
             self.query("DELETE FROM Filters WHERE FilterID = ?", (ID,))
         elif isinstance(ID, str):
@@ -281,7 +257,7 @@ class Handler():
         Value: Is the value you want to filter by.
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".Handler.filter_do")
+        logger = getLogger(pdname + "." + __name__ + ".DBHandler.filter_do")
         if ID == ":CUSTOM:":
             pass
         elif isinstance(ID, int):
@@ -373,19 +349,19 @@ class Handler():
         return self.query(sql, values) # Needs to be corrected/reformated.
 
 
-class Updater(Handler, ThreadTools):
+class Updater(DBHandler, ThreadTools):
     """Update the database to the lastest PCPP data."""
 
     def __init__(self, path, country, callback = None, *args, **kwargs):
         """Initialization.
 
-        Same args as Handler.
+        Same args as DBHandler.
         Plus callback, a function to call when done, no args.
         run - Autorun | boolean
 
         args/kwargs are passed to ThreadTools
 
-        Was going to use Handler's but could not get it working as sqlite3
+        Was going to use DBHandler's but could not get it working as sqlite3
         objects but be created inside the same thread... but i did it in
         run so???
         """
@@ -394,7 +370,7 @@ class Updater(Handler, ThreadTools):
         self.path = path
         self.callback = callback
         if country not in countries:
-            raise UnknownCountryError("PCPP does not support {0}. :\\nTry: {1}".format(country, ", ".join(countries)), county = county)
+            raise UnknownCountryError(county = county)
         self.country = country
         ThreadTools.__init__(self, *args, **kwargs)
         logger.debug("Updater ready.")
@@ -450,6 +426,8 @@ class Updater(Handler, ThreadTools):
 # Exceptions
 class UnknownCountryError(CustomException):
     """General unknown country error."""
+    def __init__(self, country):
+        super().__init__("PCPPPriceDropTracker does not support the country {0}. Try: {1}".format(country, ", ".join(countries)), country = country)
 
 class FilterError(CustomException):
     """General filter error."""
