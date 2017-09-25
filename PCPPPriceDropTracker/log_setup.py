@@ -24,16 +24,12 @@ LOG_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "loggers": {
-        pdname : {
+        "": {
             "level": "INFO",
             "handlers": ["consoleHandler", "fileHandler"],
             "propagate": False
         },
-        pdname + ".GUI.main.GUI": {
-            "level": "DEBUG",
-            "propagate": True
-        },
-        pdname + ".main": {
+        "GUI.main.GUI": {
             "level": "DEBUG",
             "propagate": True
         }
