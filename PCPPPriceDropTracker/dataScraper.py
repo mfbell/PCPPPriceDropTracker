@@ -10,7 +10,7 @@ from time import time
 from logging import getLogger
 
 from errors import UnknownCountryError
-from tools import main, pdname
+from tools import main
 
 
 def scraper(country, *args, **kwargs):
@@ -19,7 +19,7 @@ def scraper(country, *args, **kwargs):
     country - A country code supported by PCPP | string
 
     """
-    logger = getLogger(pdname + "." + __name__ + ".Scraper")
+    logger = getLogger(__name__ + ".Scraper")
     logger.debug("Data Scraper initalized.")
     if country not in ["au", "be", "ca", "de", "es", "fr",
                        "in", "it", "nz", "uk", "us"]:

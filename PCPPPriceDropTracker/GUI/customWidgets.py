@@ -12,7 +12,7 @@ from PIL import ImageTk, Image
 from logging import getLogger
 from os.path import basename
 
-from tools import pdname, main
+from tools import main
 from tools.tools import get_number_in_range
 
 __all__ = ["Panel", "MessageBox", "ScrollablePanel", "AutoHidingScollbar", "FileList",
@@ -33,7 +33,7 @@ class Panel(ttk.Frame):
 
     def __init__(self, master, *args, **kwargs):
         """Initialization. Same args as ttk.Frame and Tools."""
-        getLogger(pdname + "." + __name__ + ".Panel.__init__").debug("Panel object called.")
+        getLogger(__name__ + ".Panel.__init__").debug("Panel object called.")
         self.master = master
         ttk.Frame.__init__(self, self.master, *args, **kwargs)
         return
@@ -61,7 +61,7 @@ class MessageBox(tk.Toplevel, _Limitation):
             / Defaults to nothing
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".MessageBox.__init__")
+        logger = getLogger(__name__ + ".MessageBox.__init__")
         logger.debug("MessageBox initialization.")
         tk.Toplevel.__init__(self)
         self.main = ttk.Frame(self, padding = 6)
@@ -146,7 +146,7 @@ class ScrollablePanel(Panel, _Limitation):
         leaving it at that.
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".ScrollablePanel.__init__")
+        logger = getLogger(__name__ + ".ScrollablePanel.__init__")
         logger.debug("ScrollablePanel called.")
         self._sizes = {"max_width": max_width,
                        "max_height": max_height,
@@ -239,7 +239,7 @@ class ScrollablePanel(Panel, _Limitation):
 
     def _configure_window(self, event):
         # update the scrollbars to match the size of the inner frame
-        logger = getLogger(pdname + "." + __name__ + ".ScrollablePanel._configure_window")
+        logger = getLogger(__name__ + ".ScrollablePanel._configure_window")
         logger.debug("Update widgets.")
         size = (self.scrollwindow.winfo_reqwidth(), self.scrollwindow.winfo_reqheight())
         logger.debug("Current size %s", size)
@@ -258,7 +258,7 @@ class ScrollablePanel(Panel, _Limitation):
         dimension - width or height | string
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".ScrollablePanel._size_cal")
+        logger = getLogger(__name__ + ".ScrollablePanel._size_cal")
         logger.debug("Size calculator called.")
         #logger.debug("Values given: max_width {max_width}, max_heighth {max_height}, min_width {min_width}, min_height {min_height}".format(**self.sizes()))
         needed, scrollbar = self._get_dimensions(dimension)
@@ -277,7 +277,7 @@ class ScrollablePanel(Panel, _Limitation):
         dimension - width or height | string
 
         """
-        getLogger(pdname + "." + __name__ + ".ScrollablePanel._get_dimensions").debug("_get_dimensions called.")
+        getLogger(__name__ + ".ScrollablePanel._get_dimensions").debug("_get_dimensions called.")
         if dimension  ==  "width":
             return self.scrollwindow.winfo_reqwidth(), self.yscrlbr.winfo_width() if not "disabled" in self.yscrlbr.state() else 0
         elif dimension  ==  "height":
@@ -336,7 +336,7 @@ class AutoHidingScollbar(ttk.Scrollbar, _Limitation):
 
     def set(self, lo, hi):
         """Modified set."""
-        logger = getLogger(pdname + "." + __name__ + ".AutoHidingScollbar.set")
+        logger = getLogger(__name__ + ".AutoHidingScollbar.set")
         logger.debug("AutoHidingScollbar Set called with: {0} {1}".format(lo, hi))
         logger.debug("Passed to super")
         if float(lo) <=  0.0 and float(hi) >=  1.0:
@@ -374,7 +374,7 @@ class FileList(ScrollablePanel):
         Args and kwargs passed to ScrollablePanel.
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".FileList")
+        logger = getLogger(__name__ + ".FileList")
         logger.debug("FileList initalization.")
         super().__init__(master, *args, **kwargs)
         self.callback = callback

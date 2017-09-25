@@ -61,7 +61,7 @@ class SearchEngine():
         Need to update to use FTS5 searching!
 
         """
-        logger = getLogger(".".join([pdname, __name__, "SearchEngine", "search"]))
+        logger = getLogger(".".join([__name__, "SearchEngine", "search"]))
         search_string = self.search_string.get()
         non_split_char = '"'
         # more effcient way?

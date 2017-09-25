@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from logging import getLogger
 
-from tools import PD, pdname, config
+from tools import PD, config
 from .customWidgets import Panel, MessageBox, ScrollablePanel
 from .dialogs import OpenDB, CreateDB
 
@@ -14,13 +14,13 @@ __all__ = ["GUI"]
 class GUI(tk.Tk):
 
     def __init__(self):
-        getLogger(pdname + "." + __name__ + ".GUI.__init__").debug("GUI initialized.")
+        getLogger(__name__ + ".GUI.__init__").debug("GUI initialized.")
         super().__init__()
         self.withdraw()
         self.toplevel = None
 
     def launch(self, *a):
-        logger = getLogger(pdname + "." + __name__ + ".GUI.launch")
+        logger = getLogger(__name__ + ".GUI.launch")
         if self.toplevel is None:
             logger.debug("GUI launch called, no existing: launching.")
             self.toplevel = tk.Toplevel(self)
@@ -32,7 +32,7 @@ class GUI(tk.Tk):
             self.toplevel.attributes('-topmost', False)
 
     def close(self, *a):
-        logger = getLogger(pdname + "." + __name__ + ".GUI.close")
+        logger = getLogger(__name__ + ".GUI.close")
         if self.toplevel is not None:
             logger.debug("GUI close called, existing: closing.")
             self.toplevel.destroy()
@@ -41,7 +41,7 @@ class GUI(tk.Tk):
             logger.debug("GUI close called, no existing: pass")
 
     def destroy(self, *a):
-        getLogger(pdname + "." + __name__ + ".GUI.quit").debug("GUI quitting.")
+        getLogger(__name__ + ".GUI.quit").debug("GUI quitting.")
         super().destroy()
         self.toplevel = None
 
@@ -51,7 +51,7 @@ class Main(Panel):
 
     def __init__(self, master, close):
         """Initialization."""
-        logger = getLogger(pdname + "." + __name__ + ".Main.__init__")
+        logger = getLogger(__name__ + ".Main.__init__")
         logger.debug("GUI main window initalization.")
         super().__init__(master, padding = (12, 6, 6, 6))
         self.close = close
@@ -60,7 +60,7 @@ class Main(Panel):
         OpenDB(resent = config["databases"]["resent"], callback = self.finish_setup)
 
     def finish_setup(self, path, *a, **kw):
-        logger = getLogger(pdname + "." + __name__ + ".Main.finish_setup")
+        logger = getLogger(__name__ + ".Main.finish_setup")
         logger.debug("Finish setup...")
         self.db_handler = Handler(path = path, country = "uk")
         # Window setup
@@ -117,7 +117,7 @@ class Main(Panel):
 
     def get_main_row_height(self):
         a = self.results_panel.winfo_height()
-        getLogger(pdname + "." + __name__ + ".Main.get_main_row_height").debug("Height is "+str(a))
+        getLogger(__name__ + ".Main.get_main_row_height").debug("Height is "+str(a))
         if a is 0:
             return 32
         else:
@@ -133,7 +133,7 @@ class Main(Panel):
         try:
             a = self.search_filters.get()
         except AttributeError as e:
-            getLogger(pdname + "." + __name__ + ".Main.get_search_filters").exception(e)
+            getLogger(__name__ + ".Main.get_search_filters").exception(e)
             return "Active = 1"
         return a
 
@@ -143,7 +143,7 @@ class TitlePanel(Panel):
 
     def __init__(self, master, *args, **kwargs):
         """Initialization. Args as of Panel."""
-        logger = getLogger(pdname + "." + __name__ + ".TitlePanel.__init__")
+        logger = getLogger(__name__ + ".TitlePanel.__init__")
         logger.debug("TitlePanel initalization.")
         super().__init__(master, *args, **kwargs)
         self.text = ttk.Label(self, text = "PCPPPriceDropTracker - writen by mtech0")
@@ -176,7 +176,7 @@ class SearchBox(Panel):
             / ResultsPanel.add
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".SearchBox.__init__")
+        logger = getLogger(__name__ + ".SearchBox.__init__")
         logger.debug("SearchBox initalization.")
         super().__init__(master, *args, **kwargs)
         self.showall = showall
@@ -197,7 +197,7 @@ class SearchBox(Panel):
 
     def search(self, *args, **kwargs):
         """Search for offer in database and display results."""
-        logger = getLogger(pdname + "." + __name__ + ".SearchBox.search")
+        logger = getLogger(__name__ + ".SearchBox.search")
         string = self.search_text.get()
         logger.debug("All to search with string: '%s'.", string)
         if not string or string == "":
@@ -217,7 +217,7 @@ class SearchBox(Panel):
 
     def external_open(self):
         """Search external open rapper method."""
-        getLogger(pdname + "." + __name__ + ".SearchBox.external_open").debug("External open called.")
+        getLogger(__name__ + ".SearchBox.external_open").debug("External open called.")
         return self.search(external = True)
 
 
@@ -240,7 +240,7 @@ class ResultsPanel(Panel):
 
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".ResultsPanel.__init__")
+        logger = getLogger(__name__ + ".ResultsPanel.__init__")
         logger.debug("ResultsPanel initalization.")
         self.columns = columns
         self.searchdb = searchdb
@@ -275,12 +275,12 @@ class ResultsPanel(Panel):
 
     def clear(self):
         """Clear the Treeview/results."""
-        getLogger(pdname + "." + __name__ + ".ResultsPanel.clear").debug("Clear panel")
+        getLogger(__name__ + ".ResultsPanel.clear").debug("Clear panel")
         return self.tree.delete(*self.tree.get_children())
 
     def show_all_w_filters(self):
         """Show all <conditions -only active=1 at the moment> offers."""
-        getLogger(pdname + "." + __name__ + ".ResultsPanel.show_all_w_filters").debug("Showing all entries with filters applied to results panel.")
+        getLogger(__name__ + ".ResultsPanel.show_all_w_filters").debug("Showing all entries with filters applied to results panel.")
         self.clear()
         results = self.searchdb(self.columns, self.get_search_filters(), None)
         return self.add(results)
@@ -290,7 +290,7 @@ class ResultsPanel(Panel):
 
         data - Results to add | [[col1, col2, ...], ...] or tuplised
         """
-        getLogger(pdname + "." + __name__ + ".ResultsPanel.add").debug("Adding results to Treeview")
+        getLogger(__name__ + ".ResultsPanel.add").debug("Adding results to Treeview")
         for item in data:
             self.tree.insert('', "end", text = item[0], values = (item[1:]))
         return
@@ -305,7 +305,7 @@ class SideOptions(Panel):
 
     def __init__(self, master, close, *args, **kwargs):
         """Initialization. Args as of Panel."""
-        logger = getLogger(pdname + "." + __name__ + ".SideOptions.__init__")
+        logger = getLogger(__name__ + ".SideOptions.__init__")
         logger.debug("SideOptions initialization.")
         super().__init__(master, *args, **kwargs)
 
@@ -333,7 +333,7 @@ class SearchFilterPanel(ScrollablePanel):
 
     def __init__(self, master, *args, **kwargs):
         """Initialization. Args as of Panel."""
-        logger = getLogger(pdname + "." + __name__ + ".SearchFilterPanel.__init__")
+        logger = getLogger(__name__ + ".SearchFilterPanel.__init__")
         logger.debug("SearchFilterPanel initialization.")
         super().__init__(master, *args, **kwargs)
         # Build filters here:
@@ -345,7 +345,7 @@ class SearchFilterPanel(ScrollablePanel):
 
     def get(self):
         """Get a formated filter string."""
-        logger = getLogger(pdname + "." + __name__ + ".SearchFilterPanel.get")
+        logger = getLogger(__name__ + ".SearchFilterPanel.get")
         logger.debug("SearchFilterPanel.get called, returning filters")
         logger.warning("Filters not supported yet, only Active = 1. To be added in future update.")
         return "Active = 1"
@@ -356,7 +356,7 @@ class StatusBar(Panel):
 
     def __init__(self, master, *args, **kwargs):
         """Initialization. Args as of Panel."""
-        logger = getLogger(pdname + "." + __name__ + ".StatusBar.__init__")
+        logger = getLogger(__name__ + ".StatusBar.__init__")
         logger.debug("StatusBar initialization.")
         super().__init__(master, *args, **kwargs)
 
@@ -382,7 +382,7 @@ class MenuBar():
 
     def __init__(self, master):
         """Initialization."""
-        logger = getLogger(pdname + "." + __name__ + ".MenuBar.__init__")
+        logger = getLogger(__name__ + ".MenuBar.__init__")
         logger.debug("MenuBar initialization.")
         self.master = master
         self.menu = tk.Menu(self.master.master)
@@ -410,7 +410,7 @@ class UpdateHanlder():
 
     def __init__(self, master):
         """Initialization."""
-        logger = getLogger(pdname + "." + __name__ + ".UpdateHanlder.__init__")
+        logger = getLogger(__name__ + ".UpdateHanlder.__init__")
         logger.debug("UpdateHanlder initialization.")
         self.master = master
         self.create_popup()
@@ -419,7 +419,7 @@ class UpdateHanlder():
         return
 
     def create_popup(self):
-        logger = getLogger(pdname + "." + __name__ + ".UpdateHanlder.create_popup")
+        logger = getLogger(__name__ + ".UpdateHanlder.create_popup")
         logger.debug("Creating popup.")
         self.text = tk.StringVar()
         self.button = tk.StringVar()
@@ -433,7 +433,7 @@ class UpdateHanlder():
         return
 
     def popup_updater(self):
-        logger = getLogger(pdname + "." + __name__ + ".UpdateHanlder.popup_updater")
+        logger = getLogger(__name__ + ".UpdateHanlder.popup_updater")
         logger.debug("popup_updater called")
         self.text.set("Updated local database")
         self.button.set("Close")
@@ -444,7 +444,7 @@ class UpdateHanlder():
         return
 
     def update_and_close(self):
-        getLogger(pdname + "." + __name__ + ".UpdateHanlder.update_and_close").debug("Close and update pressed.")
+        getLogger(__name__ + ".UpdateHanlder.update_and_close").debug("Close and update pressed.")
         self.msg_box.destroy()
         self.master.search_box.search()
         return
@@ -456,7 +456,7 @@ def mp():
 
 def main():
     """Main."""
-    logger = getLogger(pdname + "." + __name__ + ".main")
+    logger = getLogger(__name__ + ".main")
     logger.debug("Main called, calling and running App")
     app = App()
     app.mainloop()
@@ -466,7 +466,7 @@ def main():
 def run_as_main():
     import log_setup
     log_setup.setup()
-    getLogger(pdname + "." + __name__).debug("Run as main.")
+    getLogger(__name__).debug("Run as main.")
     main()
 
 if __name__ == '__main__':

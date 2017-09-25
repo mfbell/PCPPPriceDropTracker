@@ -21,7 +21,7 @@ class CustomException(Exception):
         """CustomException standard __init__ method."""
         if not msg:
             msg = self.__doc__
-        getLogger(pdname + "." + __name__ + "." + type(self).__name__ + ".__init__").exception("Exception raised: {}".format(msg))
+        getLogger(__name__ + "." + type(self).__name__ + ".__init__").exception("Exception raised: {}".format(msg))
         super().__init__(msg)
         self.msg = msg
         self.args = args

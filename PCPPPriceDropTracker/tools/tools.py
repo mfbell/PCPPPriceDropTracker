@@ -54,7 +54,7 @@ def get_number_in_range(number, min_ = None, max_ = None):
         / If not given, no maximum is set.
 
     """
-    logger = getLogger(pdname + "." + __name__ + ".get_number_in_range")
+    logger = getLogger(__name__ + ".get_number_in_range")
     logger.debug("Call to get_number_in_range.")
     logger.debug("Args given: {0}, {1}, {2}".format(number, min_, max_))
     if min_ is None and max_ is None:
@@ -86,7 +86,7 @@ class ThreadTools(Thread):
 
     def __init__(self, run = False, *a, **kw):
         """Initialization."""
-        logger = getLogger(pdname + "." + __name__ + ".ThreadTools.__init__")
+        logger = getLogger(__name__ + ".ThreadTools.__init__")
         logger.debug("ThreadTools Class called.")
         super().__init__(*a, **kw)
         if run:

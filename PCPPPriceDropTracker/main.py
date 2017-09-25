@@ -13,13 +13,13 @@ from PIL import Image
 
 from GUI import GUI
 from log_setup import setup as logging_setup
-from tools import pdname, PD, ThreadTools
+from tools import PD, ThreadTools
 
 
 def app():
     """Main thread oporations."""
     logging_setup()
-    logger = getLogger(pdname + "." + __name__ + ".main")
+    logger = getLogger( __name__ + ".main")
     logger.info("PCPPPriceDropTracker launching...")
     # Arg parser
     parser = argparse.ArgumentParser(prog = PD["project"]["name"],
@@ -99,10 +99,10 @@ class SystrayIcon(ThreadTools):
         self.icon.menu = pystray.Menu(pystray.MenuItem("Open", self.launch_gui_cmd, default = True),
                                       pystray.MenuItem("Scan", self.scan_cmd),
                                       pystray.MenuItem("Exit", self.quit_cmd))
-        getLogger(pdname + "." + __name__ + ".SystrayIcon.quit").debug("SystrayIcon build and running.")
+        getLogger( __name__ + ".SystrayIcon.quit").debug("SystrayIcon build and running.")
         self.icon.run()
 
     def quit(self):
-        getLogger(pdname + "." + __name__ + ".SystrayIcon.quit").debug("SystrayIcon quit.")
+        getLogger( __name__ + ".SystrayIcon.quit").debug("SystrayIcon quit.")
         self.icon.visible = False
         self.icon.stop()

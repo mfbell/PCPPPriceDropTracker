@@ -9,7 +9,7 @@ import json
 from logging import getLogger
 
 from exceptions import CustomException
-from tools import main, ThreadTools, pdname, countries
+from tools import main, ThreadTools, countries
 from dataScraper import scraper
 from tools.dictionaries import ActiveJSONDictionary
 
@@ -21,7 +21,7 @@ class DBHandler():
 
     def __init__(self):
         """Initialization."""
-        logger = getLogger(pdname + "." + __name__ + ".DBHandler.__init__")
+        logger = getLogger(__name__ + ".DBHandler.__init__")
         logger.debug("Database Handler initalized.")
 
     # DB Tools or Handling Tools
@@ -32,7 +32,7 @@ class DBHandler():
         country - Country code | string
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".DBHandler.create")
+        logger = getLogger(__name__ + ".DBHandler.create")
         logger.debug("Creating DB {0}, country: {1}".format(path, country))
         if country not in countries:
             # You should not value check normally but this is so important.
@@ -84,12 +84,12 @@ class DBHandler():
         path - File path | string
 
         """
-        getLogger(pdname + "." + __name__ + ".DBHandler.open").debug("Open connection to DB: {0}".format(path))
+        getLogger(__name__ + ".DBHandler.open").debug("Open connection to DB: {0}".format(path))
         self._open(path)
         self._properties_setup()
 
     def _open(self, path):
-        getLogger(pdname + "." + __name__ + ".DBHandler._open").debug("Opening connection to DB: {0}".format(path))
+        getLogger(__name__ + ".DBHandler._open").debug("Opening connection to DB: {0}".format(path))
         self.path = path
         self.db = sqlite3.connect(self.path)
         self.c = self.db.cursor()
@@ -100,7 +100,7 @@ class DBHandler():
         commit - Do a final commit? | boolean
 
         """
-        getLogger(pdname + "." + __name__ + ".DBHandler.close").debug("Closing connection to db, with commmit?: {0}".format(commit))
+        getLogger(__name__ + ".DBHandler.close").debug("Closing connection to db, with commmit?: {0}".format(commit))
         if commit:
             self.db.commit()
         self.db.close()
@@ -113,7 +113,7 @@ class DBHandler():
         callback - Function to call on completion | Function
 
         """
-        getLogger(pdname + "." + __name__ + ".DBHandler.updater").debug("Updater rapper called.")
+        getLogger(__name__ + ".DBHandler.updater").debug("Updater rapper called.")
         updater = Updater(country = self.country, path = self.path, callback = callback, run = True)
 
     def clean(self, inactive = True, displayed = False):
@@ -125,7 +125,7 @@ class DBHandler():
             / Defaults to False
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".DBHandler.clean")
+        logger = getLogger(__name__ + ".DBHandler.clean")
         logger.debug("Removing inactive: {} and displayed: {} entries from database offers tablle".format(inactive, displayed))
         if inactive:
             self.query("DELETE FROM Offers WHERE Active = 0")
@@ -143,7 +143,7 @@ class DBHandler():
             IDs can be frond in the error under results.
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".DBHandler.get_product_id")
+        logger = getLogger(__name__ + ".DBHandler.get_product_id")
         logger.debug("Get product ID of {}".format(name))
         result = self.query("SELECT ProductID FROM Products WHERE Name = ?", (item,))
         if not result:
@@ -166,7 +166,7 @@ class DBHandler():
         Returns cursor.fetchall
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".DBHandler.query")
+        logger = getLogger(__name__ + ".DBHandler.query")
         logger.debug("Querying DB: '{}' with {}".format(" ".join([p.strip() for p in sql.split()]), data))
         self.c.execute(sql, data)
         if commit:
@@ -201,7 +201,7 @@ class DBHandler():
         name - Name of filter | string
 
         """
-        getLogger(pdname + "." + __name__ + ".DBHandler.filter_add").debug("Add filter called. filter {0}, name {0}".format(filter_, name))
+        getLogger(__name__ + ".DBHandler.filter_add").debug("Add filter called. filter {0}, name {0}".format(filter_, name))
         self.query("INSERT INTO Filters(Name, Filter, Date_Time) VALUES (?, ?, ?)", (name, json.dumps(filter_), time()))
         return
 
@@ -211,7 +211,7 @@ class DBHandler():
         ID - Filter name or FilterID | int or string
 
         """
-        getLogger(pdname + "." + __name__ + ".DBHandler.filter_delete").debug("Deleting filter {0}".format(ID))
+        getLogger(__name__ + ".DBHandler.filter_delete").debug("Deleting filter {0}".format(ID))
         if isinstance(ID, int):
             self.query("DELETE FROM Filters WHERE FilterID = ?", (ID,))
         elif isinstance(ID, str):
@@ -251,7 +251,7 @@ class DBHandler():
         Value: Is the value you want to filter by.
 
         """
-        logger = getLogger(pdname + "." + __name__ + ".DBHandler.filter_do")
+        logger = getLogger(__name__ + ".DBHandler.filter_do")
         if ID == ":CUSTOM:":
             pass
         elif isinstance(ID, int):
@@ -359,7 +359,7 @@ class Updater(DBHandler, ThreadTools):
         objects but be created inside the same thread... but i did it in
         run so???
         """
-        logger = getLogger(pdname + "." + __name__ + ".Updater.__init__")
+        logger = getLogger(__name__ + ".Updater.__init__")
         logger.debug("DB Updater initalization.")
         self.path = path
         self.callback = callback
@@ -372,7 +372,7 @@ class Updater(DBHandler, ThreadTools):
 
     def run(self):
         """Run the updater."""
-        logger = getLogger(pdname + "." + __name__ + ".Updater.run")
+        logger = getLogger(__name__ + ".Updater.run")
         logger.debug("DB Updater running.")
         self.open()
         self.first_setup()

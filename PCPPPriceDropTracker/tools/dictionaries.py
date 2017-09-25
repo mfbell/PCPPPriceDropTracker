@@ -22,7 +22,7 @@ class CallbackOnEditDict(dict):
     """
 
     def __init__(self, convert = None, callback = None, *a, **kw):
-        #getLogger(pdname + "." + __name__ + ".CallbackOnEditDict.__init__").debug("CallbackOnEditDict initialized.")
+        #getLogger(__name__ + ".CallbackOnEditDict.__init__").debug("CallbackOnEditDict initialized.")
         if callback is None:
             raise TypeError("CallbackOnEditDict expected function for callback.")
         if not callable(callback):
@@ -35,7 +35,7 @@ class CallbackOnEditDict(dict):
         return
 
     def callback(self, condition = None):
-        #getLogger(pdname + "." + __name__ + ".CallbackOnEditDict.callback").debug("Callback called, {0}?, con: {0}".format(not self.setup_mode, condition))
+        #getLogger(__name__ + ".CallbackOnEditDict.callback").debug("Callback called, {0}?, con: {0}".format(not self.setup_mode, condition))
         if self.setup_mode is not True:
             if condition == "set":
                 self.convert()

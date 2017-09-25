@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from logging import getLogger
 
-from tools import pdname, main
+from tools import main
 from .customWidgets import Panel, FilePathEntry, FileList
 
 
@@ -32,7 +32,7 @@ class CreateDB(_PathDialog):
     """Create a new database dialog."""
 
     def __init__(self, callback, master = None, destroy = True, *args, **kwargs):
-        logger = getLogger(pdname + "." + __name__ + ".CreateDB.__init__")
+        logger = getLogger(__name__ + ".CreateDB.__init__")
         logger.debug("CreateDB initalization.")
         if master is None:
             master = tk.Toplevel()
@@ -72,7 +72,7 @@ class OpenDB(_PathDialog):
 
     def __init__(self, callback, master = None, resent = [], destroy = True, *args, **kwargs):
         """Initialization."""
-        logger = getLogger(pdname + "." + __name__ + ".OpenDB.__init__")
+        logger = getLogger(__name__ + ".OpenDB.__init__")
         logger.debug("OpenDB initalization.")
         if master is None:
             self.master = tk.Toplevel()
