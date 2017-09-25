@@ -3,7 +3,7 @@
 import os
 import json
 
-from . import main
+from .tools import main
 
 
 __all__ = ["CallbackOnEditDict", "SelfSavingDict", "ActiveJSONDictionary"]
@@ -107,6 +107,7 @@ class SelfSavingFileDictionary(CallbackOnEditDict):
 
         path - File path | String
         indent - Level of indentation | Integer
+            / Defaults to 2
 
         """
         self.path = path
@@ -136,12 +137,14 @@ class ActiveJSONDictionary(CallbackOnEditDict):
     On edit, saves dictionary the output.
 
     """
-    def __init__(self, current, output, indent = 0):
+    def __init__(self, output, current = None, indent = 0):
         """Setup
 
-        current - JSON data to load info dictionary | String
         output - Function to pass JSON string too | Function
+        current - JSON data to load info dictionary | String
+            / Not required
         indent - Level of indentation | Integer
+            / Defaults to nothing
 
         """
         self.output = output
