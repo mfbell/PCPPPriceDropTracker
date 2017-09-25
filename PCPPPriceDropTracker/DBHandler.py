@@ -8,7 +8,7 @@ from time import time
 import json
 from logging import getLogger
 
-from exceptions import CustomException
+from exceptions import CustomException, UnknownCountryError
 from tools import main, ThreadTools, countries
 from dataScraper import scraper
 from tools.dictionaries import ActiveJSONDictionary
@@ -418,11 +418,6 @@ class Updater(DBHandler, ThreadTools):
 
 
 # Exceptions
-class UnknownCountryError(CustomException):
-    """General unknown country error."""
-    def __init__(self, country):
-        super().__init__("PCPPPriceDropTracker does not support the country {0}. Try: {1}".format(country, ", ".join(countries)), country = country)
-
 class FilterError(CustomException):
     """General filter error."""
 

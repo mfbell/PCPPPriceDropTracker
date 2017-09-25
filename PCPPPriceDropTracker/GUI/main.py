@@ -5,6 +5,7 @@ from tkinter import ttk
 from logging import getLogger
 
 from tools import PD, config
+from DBHandler import DBHandler
 from .customWidgets import Panel, MessageBox, ScrollablePanel
 from .dialogs import OpenDB, CreateDB
 
@@ -62,7 +63,7 @@ class Main(Panel):
     def finish_setup(self, path, *a, **kw):
         logger = getLogger(__name__ + ".Main.finish_setup")
         logger.debug("Finish setup...")
-        self.db_handler = Handler(path = path, country = "uk")
+        self.db_handler = DBHandler(path = path, country = "uk")
         # Window setup
         self.master.title("PCPPPriceDropTracker")
         self.master.option_add('*tearOff', False)

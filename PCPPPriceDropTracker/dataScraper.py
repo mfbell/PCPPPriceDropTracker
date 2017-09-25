@@ -9,7 +9,7 @@ import requests
 from time import time
 from logging import getLogger
 
-from errors import UnknownCountryError
+from exceptions import UnknownCountryError
 from tools import main
 
 
@@ -23,7 +23,7 @@ def scraper(country, *args, **kwargs):
     logger.debug("Data Scraper initalized.")
     if country not in ["au", "be", "ca", "de", "es", "fr",
                        "in", "it", "nz", "uk", "us"]:
-        raise UnknownCountryError("PCPP does not support {0}. :\\".format(country))
+        raise UnknownCountryError(country = country)
     dl_time = time()
     page = requests.get("https://{0}.pcpartpicker.com/products/pricedrop/".format(country))
     soup = BeautifulSoup(page.content, 'html.parser')
