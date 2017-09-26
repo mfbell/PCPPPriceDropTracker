@@ -3,4 +3,4 @@
 *.egg-info/
 dist/
 *.splite3
-./testing-unused/
+*/testing-unused/
