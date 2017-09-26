@@ -1,4 +1,4 @@
-"""PCPPPriceDropTracker main GUI widgets."""
+"""PCPPPriceDropTracker GUI main module."""
 
 import tkinter as tk
 from tkinter import ttk
@@ -13,6 +13,7 @@ from .dialogs import OpenDB, CreateDB
 __all__ = ["GUI"]
 
 class GUI(tk.Tk):
+    """GUI Handler."""
 
     def __init__(self):
         getLogger(__name__ + ".GUI.__init__").debug("GUI initialized.")
@@ -57,13 +58,13 @@ class Main(Panel):
         super().__init__(master, padding = (12, 6, 6, 6))
         self.close = close
         self.grid()
-        self.master.withdraw()
-        OpenDB(resent = config["databases"]["resent"], callback = self.finish_setup)
+        #self.master.withdraw()
+        #OpenDB(resent = config["databases"]["resent"], callback = self.finish_setup)
 
-    def finish_setup(self, path, *a, **kw):
-        logger = getLogger(__name__ + ".Main.finish_setup")
-        logger.debug("Finish setup...")
-        self.db_handler = DBHandler(path = path, country = "uk")
+    #def finish_setup(self, path, *a, **kw):
+        #logger = getLogger(__name__ + ".Main.finish_setup")
+        #logger.debug("Finish setup...")
+        #self.db_handler = DBHandler(path = path, country = "uk")
         # Window setup
         self.master.title("PCPPPriceDropTracker")
         self.master.option_add('*tearOff', False)
