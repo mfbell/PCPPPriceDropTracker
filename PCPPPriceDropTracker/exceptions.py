@@ -29,7 +29,7 @@ class CustomException(Exception):
             setattr(self, key, value)
         self.script()
 
-    def script():
+    def script(self):
         """Custom script."""
         pass
 
